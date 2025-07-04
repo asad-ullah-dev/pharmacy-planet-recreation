@@ -162,8 +162,8 @@ export default function SignUpPage() {
                       </div>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4 mb-4">
-                      <div>
+                    <div className="grid md:grid-cols-12 gap-4 mb-4">
+                      <div className="md:col-span-7">
                         <Label>Date of Birth</Label>
                         <div className="flex sm:gap-2 gap-1 mt-1">
                           <select
@@ -207,7 +207,7 @@ export default function SignUpPage() {
                           </select>
                         </div>
                       </div>
-                      <div>
+                      <div className="md:col-span-5">
                         <Label htmlFor="phoneNumber">Phone Number</Label>
                         <Input
                           id="phoneNumber"
