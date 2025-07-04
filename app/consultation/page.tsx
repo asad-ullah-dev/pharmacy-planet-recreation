@@ -55,7 +55,7 @@ export default function ConsultationPage() {
       <header className="border-b border-gray-200 bg-white sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center mr-8">
+            <Link href="/" className="flex items-center sm:mr-8 mr-2">
               <Image src="/images/ozempo-logo.png" alt="Ozempo" width={150} height={40} className="h-10 w-auto" />
             </Link>
 
