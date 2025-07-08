@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,6 +11,7 @@ import { Eye, EyeOff, Mail, Lock, AlertCircle, Phone, MapPin } from "lucide-reac
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import axios from "axios"
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -28,41 +28,38 @@ export default function LoginPage() {
     setError("")
     setIsLoading(true)
 
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`,
+        {
+          email: formData.email,
+          password: formData.password,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      )
 
-    // Check for admin credentials
-    if (formData.email === "admin@example.com" && formData.password === "12345678") {
-      // Redirect to admin dashboard
+      console.log("Login Success:", response.data)
+
+      // Optional: Store token if provided
+      // localStorage.setItem("token", response.data.token)
+
+      // Redirect after successful login
       router.push("/admin/dashboard")
-      return
-    }
+    } catch (err: any) {
+      console.error("Login Error:", err)
 
-    // Basic validation for regular users
-    if (!formData.email || !formData.password) {
-      setError("Please fill in all fields")
+      if (err.response && err.response.data) {
+        setError(err.response.data.message || "Invalid credentials")
+      } else {
+        setError("Something went wrong. Please try again.")
+      }
+    } finally {
       setIsLoading(false)
-      return
     }
-
-    if (!formData.email.includes("@")) {
-      setError("Please enter a valid email address")
-      setIsLoading(false)
-      return
-    }
-
-    if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters")
-      setIsLoading(false)
-      return
-    }
-
-    // Simulate successful login for regular users
-    console.log("Login attempt:", formData)
-
-    // Redirect to medical questionnaire for regular users
-    router.push("/onboarding/medical-questionnaire")
-    setIsLoading(false)
   }
 
   return (
@@ -83,7 +80,7 @@ export default function LoginPage() {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{" "}
-            <Link href="/auth/signup" className="font-medium text-primary hover:text-blue-500">
+            <Link href="/auth/register" className="font-medium text-primary hover:text-blue-500">
               create a new account
             </Link>
           </p>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation" // ✅ Add router
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -10,8 +11,11 @@ import { Label } from "@/components/ui/label"
 import { Eye, EyeOff, Star, Phone, Mail, MapPin } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import axios from "axios"
 
-export default function SignUpPage() {
+export default function RegisterPage() {
+  const router = useRouter() // ✅ Initialize router
+
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     firstName: "",
@@ -34,40 +38,61 @@ export default function SignUpPage() {
   })
 
   const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
   ]
 
   const ethnicGroups = [
-    "Please Select",
-    "White British",
-    "White Irish",
-    "White Other",
-    "Mixed White and Black Caribbean",
-    "Mixed White and Black African",
-    "Mixed White and Asian",
-    "Mixed Other",
-    "Asian or Asian British Indian",
-    "Asian or Asian British Pakistani",
-    "Asian or Asian British Bangladeshi",
-    "Asian or Asian British Other",
-    "Black or Black British Caribbean",
-    "Black or Black British African",
-    "Black or Black British Other",
-    "Chinese",
-    "Other Ethnic Group",
-    "Prefer not to say",
+    "Please Select", "White British", "White Irish", "White Other",
+    "Mixed White and Black Caribbean", "Mixed White and Black African", "Mixed White and Asian", "Mixed Other",
+    "Asian or Asian British Indian", "Asian or Asian British Pakistani", "Asian or Asian British Bangladeshi",
+    "Asian or Asian British Other", "Black or Black British Caribbean", "Black or Black British African",
+    "Black or Black British Other", "Chinese", "Other Ethnic Group", "Prefer not to say"
   ]
+
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+
+  const formattedPayload = {
+    first_name: formData.firstName,
+    last_name: formData.lastName,
+    date_of_birth: `${formData.dobYear}-${formData.dobMonth.padStart(2, "0")}-${formData.dobDay.padStart(2, "0")}`,
+    phone_number: formData.phoneNumber,
+    gender: formData.gender,
+    street_address: formData.streetAddress,
+    county: formData.county,
+    city: formData.city,
+    country: formData.country,
+    zip_postal_code: formData.zipCode,
+    ethnicity: formData.ethnicGroup,
+    email: formData.email,
+    password: formData.password,
+    password_confirmation: formData.password,
+  }
+
+  try {
+    const res = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/register`,
+      formattedPayload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
+
+    console.log("API Response:", res.data)
+    alert("Account created successfully!")
+    router.push("/auth/login")
+  } catch (error: any) {
+    console.error("API error:", error)
+    if (error.response) {
+      alert(error.response.data.message || "Something went wrong")
+    } else {
+      alert("Failed to create account")
+    }
+  }
+}
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -111,6 +136,7 @@ export default function SignUpPage() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
+          <form onSubmit={handleSubmit}>
           <div className="text-center mb-8">
             <div className="mb-6">
               <Link href="/">
@@ -266,22 +292,6 @@ export default function SignUpPage() {
 
                     <div className="grid md:grid-cols-2 gap-4 mb-4">
                       <div>
-                        <Label htmlFor="county">County</Label>
-                        <select
-                          id="county"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md mt-1"
-                          value={formData.county}
-                          onChange={(e) => setFormData({ ...formData, county: e.target.value })}
-                        >
-                          <option value="">Please select a region, state or province...</option>
-                          <option value="london">London</option>
-                          <option value="manchester">Manchester</option>
-                          <option value="birmingham">Birmingham</option>
-                          <option value="liverpool">Liverpool</option>
-                          <option value="leeds">Leeds</option>
-                        </select>
-                      </div>
-                      <div>
                         <Label htmlFor="city">City</Label>
                         <Input
                           id="city"
@@ -290,9 +300,6 @@ export default function SignUpPage() {
                           className="mt-1"
                         />
                       </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="country">Country</Label>
                         <select
@@ -305,6 +312,7 @@ export default function SignUpPage() {
                           <option value="Ireland">Ireland</option>
                         </select>
                       </div>
+                    </div>
                       <div>
                         <Label htmlFor="zipCode">Zip/Postal Code</Label>
                         <Input
@@ -314,7 +322,6 @@ export default function SignUpPage() {
                           className="mt-1"
                         />
                       </div>
-                    </div>
                   </div>
 
                   {/* Ethnicity Information */}
@@ -470,6 +477,7 @@ export default function SignUpPage() {
               </div>
             </div>
           </div>
+          </form>
         </div>
       </main>
 
