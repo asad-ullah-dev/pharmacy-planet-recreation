@@ -29,7 +29,7 @@ export default function TermsConditionsPage() {
             </nav>
 
             <div className="flex items-center space-x-4">
-              <Link href="/auth/login" className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded">
+              <Link href="/auth/register" className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded">
                 Login / Sign Up
               </Link>
             </div>

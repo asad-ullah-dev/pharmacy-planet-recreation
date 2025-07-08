@@ -345,9 +345,9 @@ export default function AdminUsersPage() {
                     <Label className="text-sm font-medium text-gray-600">Phone</Label>
                     <p className="text-sm text-gray-900 mt-1">{selectedUser.phone}</p>
                   </div>
-                  <div>
+                  <div className="flex flex-col gap-1">
                     <Label className="text-sm font-medium text-gray-600">Status</Label>
-                    <Badge className={`${getStatusColor(selectedUser.status)} mt-1`}>{selectedUser.status}</Badge>
+                    <Badge className={`${getStatusColor(selectedUser.status)} w-fit`}>{selectedUser.status}</Badge>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-600">Location</Label>

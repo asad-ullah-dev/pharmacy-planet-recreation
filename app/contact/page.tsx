@@ -77,7 +77,7 @@ export default function ContactPage() {
 
             <div className="flex items-center sm:space-x-4 space-x-2">
               <Button className="bg-teal-500 hover:bg-teal-600 text-white max-sm:w-full md:text-sm text-xs md:px-4 px-2 md:py-2 py-1">Start Consultation</Button>
-              <Link href="/auth/login">
+              <Link href="/auth/register">
                 <Button
                   variant="outline"
                   className="bg-white text-primary border-primary hover:bg-primary hover:text-white max-sm:w-full md:text-sm text-xs md:px-4 px-2 md:py-2 py-1"

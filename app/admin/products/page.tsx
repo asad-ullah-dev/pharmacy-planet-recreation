@@ -394,9 +394,9 @@ export default function AdminProductsPage() {
                     <Label className="text-sm font-medium text-gray-600">Stock</Label>
                     <p className="text-sm text-gray-900 mt-1">{selectedProduct.stock} units</p>
                   </div>
-                  <div>
+                  <div className="flex flex-col gap-1">
                     <Label className="text-sm font-medium text-gray-600">Status</Label>
-                    <Badge className={`${getStatusColor(selectedProduct.status)} mt-1`}>{selectedProduct.status}</Badge>
+                    <Badge className={`${getStatusColor(selectedProduct.status)} w-fit`}>{selectedProduct.status}</Badge>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-600">Total Sales</Label>
