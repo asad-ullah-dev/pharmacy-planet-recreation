@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -22,57 +22,67 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import Logout from "@/components/logout/Logout"
+import { getAllMedicines, createMedicine, getMedicineById, updateMedicine, deleteMedicine } from "@/app/lib/api/medicineService";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import { toast } from "sonner";
+import { useRouter,useParams } from "next/navigation";
 
-// Sample product data
-const sampleProducts = [
-  {
-    id: 1,
-    name: "Ozempic 0.5mg Pen",
-    description: "Pre-filled injection pen for weight management - 0.5mg dosage",
-    price: 299.99,
-    stock: 45,
-    category: "Weight Loss",
-    status: "Active",
-    sales: 234,
-    image: "/placeholder.svg?height=100&width=100",
-  },
-  {
-    id: 2,
-    name: "Ozempic 1mg Pen",
-    description: "Pre-filled injection pen for weight management - 1mg dosage",
-    price: 299.99,
-    stock: 32,
-    category: "Weight Loss",
-    status: "Active",
-    sales: 189,
-    image: "/placeholder.svg?height=100&width=100",
-  },
-  {
-    id: 3,
-    name: "Consultation Service",
-    description: "Professional medical consultation for weight management",
-    price: 49.99,
-    stock: 999,
-    category: "Services",
-    status: "Active",
-    sales: 456,
-    image: "/placeholder.svg?height=100&width=100",
-  },
-  {
-    id: 4,
-    name: "Follow-up Consultation",
-    description: "Follow-up medical consultation for ongoing treatment",
-    price: 29.99,
-    stock: 999,
-    category: "Services",
-    status: "Active",
-    sales: 123,
-    image: "/placeholder.svg?height=100&width=100",
-  },
-]
+
+type Medicine = {
+  id: number;
+  name: string;
+  description: string;
+  price: string;
+  stock: number;
+  category: string;
+  expiry_date: string;
+};
+
+  const schema = yup.object().shape({
+  name: yup.string().required("Name is required"),
+  category: yup.string().required("Category is required"),
+  description: yup.string().required("Description is required"),
+  price: yup.number().typeError("Price must be a number").required("Price is required"),
+  stock: yup.number().typeError("Stock must be a number").required("Stock is required"),
+  expiry_date: yup.string().required("Expiry Date is required"),
+});
+
 
 export default function AdminProductsPage() {
-  const [products, setProducts] = useState(sampleProducts)
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  const id = Number(params?.id);
+  const [medicine, setMedicine] = useState<Medicine | null>(null);
+
+    const fetchMedicine = async () => {
+    try {
+       const data = await getMedicineById(id);
+      setMedicine(data);
+    } catch (err) {
+      console.error("Failed to load medicine", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+    useEffect(() => {
+  if (id) 
+    fetchMedicine();
+}, [id]);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm({
+    resolver: yupResolver(schema),
+  });
+  const [Formloading, setFormLoading] = useState(false);
+  const [medicineDetail,setMedicineDetail] = useState("");
+  const [products, setProducts] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
@@ -86,12 +96,63 @@ export default function AdminProductsPage() {
     category: "",
     status: "Active",
   })
+   const [loading, setLoading] = useState<boolean>(true);
 
-  const filteredProducts = products.filter(
-    (product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+   const handleSaveEdit = async () => {
+  try {
+    const updatedData = {
+      name: editForm.name,
+      description: editForm.description,
+      price: parseFloat(editForm.price),
+      stock: parseInt(editForm.stock),
+      category: editForm.category,
+      status: editForm.status,
+    };
+
+    await updateMedicine(selectedProduct.id, updatedData);
+
+    toast.success("Product updated successfully");
+
+    // UI update karo
+    fetchMedicines();
+    setIsEditModalOpen(false);
+  } catch (error: any) {
+    console.error("Update error:", error);
+    toast.error("Failed to update product");
+  }
+};
+
+
+   const fetchMedicines = async () => {
+      try {
+        const data = await getAllMedicines();
+        console.log(data,'data')
+        setProducts(data);
+      } catch (error) {
+        console.error("Failed to fetch medicines");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  useEffect(() => {
+    fetchMedicines();
+  }, []);
+     
+  const onSubmit = async (data: any) => {
+    try {
+      setFormLoading(true);
+       await createMedicine(data);
+      toast.success("Medicine created successfully");
+      fetchMedicines();
+      reset();
+    } catch (error: any) {
+      toast.error("Failed to create medicine");
+      console.error("Error:", error);
+    } finally {
+      setFormLoading(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     return status === "Active"
@@ -105,10 +166,20 @@ export default function AdminProductsPage() {
     return { color: "text-green-600", label: "In Stock" }
   }
 
-  const handleViewProduct = (product) => {
-    setSelectedProduct(product)
-    setIsViewModalOpen(true)
+  const handleView = async (id: number) => {
+  setSelectedMedicineId(id);
+  setIsModalOpen(true);
+  setLoading(true);
+
+  try {
+     const data = await getMedicineById(id);
+    setMedicineDetail(data);
+  } catch (error) {
+    console.error("Error loading medicine", error);
+  } finally {
+    setLoading(false);
   }
+};
 
   const handleEditProduct = (product) => {
     setSelectedProduct(product)
@@ -123,30 +194,19 @@ export default function AdminProductsPage() {
     setIsEditModalOpen(true)
   }
 
-  const handleDeleteProduct = (productId) => {
-    if (confirm("Are you sure you want to delete this product?")) {
-      setProducts(products.filter((product) => product.id !== productId))
-    }
+  const handleDeleteProduct = async (productId: number) => {
+  try {
+    await deleteMedicine(productId);
+    toast.success("Product deleted successfully");
+    setProducts((prev) => prev.filter((product) => product.id !== productId));
+  } catch (error) {
+    console.error("Failed to delete product", error);
+    toast.error("Failed to delete product");
   }
+};
 
-  const handleSaveEdit = () => {
-    setProducts(
-      products.map((product) =>
-        product.id === selectedProduct.id
-          ? {
-              ...product,
-              name: editForm.name,
-              description: editForm.description,
-              price: Number.parseFloat(editForm.price),
-              stock: Number.parseInt(editForm.stock),
-              category: editForm.category,
-              status: editForm.status,
-            }
-          : product,
-      ),
-    )
-    setIsEditModalOpen(false)
-  }
+
+  if (loading) return <div className="p-4">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -167,11 +227,9 @@ export default function AdminProductsPage() {
                       ADMIN PANEL
                    </Badge>
                  </div>
-                 <Link href="/auth/login">
-                   <Button variant="outline" className="text-red-600 border-red-500 hover:bg-red-50 sm:text-sm text-xs sm:px-3 px-1.5">
-                     Logout
-                   </Button>
-                 </Link>
+                 <div>
+                   <Logout />
+                </div>
                </div>
              </div>
       </header>
@@ -203,40 +261,51 @@ export default function AdminProductsPage() {
               <DialogHeader>
                 <DialogTitle>Add New Product</DialogTitle>
               </DialogHeader>
+
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="name">Product Name</Label>
-                    <Input id="name" placeholder="Enter product name" />
+                    <Input id="name" placeholder="Enter product name" {...register("name")}/>
                   </div>
                   <div>
                     <Label htmlFor="category">Category</Label>
-                    <Input id="category" placeholder="Enter category" />
+                    <Input id="category" placeholder="Enter category" {...register("category")}/>
                   </div>
                   <div>
                     <Label htmlFor="price">Price (£)</Label>
-                    <Input id="price" type="number" placeholder="0.00" />
+                    <Input id="price" type="number" placeholder="0.00" {...register("price")} />
                   </div>
                   <div>
                     <Label htmlFor="stock">Stock Quantity</Label>
-                    <Input id="stock" type="number" placeholder="0" />
+                    <Input id="stock" type="number" placeholder="0"  {...register("stock")} />
+                  </div>
+                  <div>
+                    <Label htmlFor="stock">Stock Quantity</Label>
+                   <Input placeholder="Expiry Date (e.g. 2025-12-31)" type="date" {...register("expiry_date")} />
+      
                   </div>
                 </div>
                 <div>
                   <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" placeholder="Enter product description" />
+                  <Textarea id="description" placeholder="Enter product description" {...register("description")} />
                 </div>
                 <div className="flex justify-end space-x-2">
                   <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>
                     Cancel
                   </Button>
                   <Button
-                    className="text-white"
-                    style={{ backgroundColor: "#14b8a6" }}
-                    onClick={() => setIsAddModalOpen(false)}
-                  >
-                    Add Product
-                  </Button>
+  className="text-white"
+  style={{ backgroundColor: "#14b8a6" }}
+  onClick={() => {
+    setIsAddModalOpen(false);
+    handleSubmit(onSubmit)();
+  }}
+>
+          {Formloading ? "Submitting..." : "Add Product"}
+
+  Add Product
+</Button>
                 </div>
               </div>
             </DialogContent>
@@ -313,60 +382,95 @@ export default function AdminProductsPage() {
         </Card>
 
         {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProducts.map((product) => {
-            const stockStatus = getStockStatus(product.stock)
-            return (
-              <Card key={product.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>
-                      <p className="text-sm text-gray-600 mb-3">{product.description}</p>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Price:</span>
-                          <span className="font-semibold text-gray-900">£{product.price.toFixed(2)}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Stock:</span>
-                          <span className={`font-medium ${stockStatus.color}`}>
-                            {product.stock} ({stockStatus.label})
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Sales:</span>
-                          <span className="font-medium text-gray-900">{product.sales}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Status:</span>
-                          <Badge className={getStatusColor(product.status)}>{product.status}</Badge>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => handleViewProduct(product)} className="flex-1">
-                      <Eye className="h-4 w-4 mr-1" />
-                      View
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleEditProduct(product)} className="flex-1">
-                      <Edit className="h-4 w-4 mr-1" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteProduct(product.id)}
-                      className="text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+         {products.map((product) => {
+          const stockStatus = getStockStatus(product.stock);
+
+  return (
+    <Card key={product.id}
+    className="hover:shadow-md transition-shadow"
+    onClick={() => router.push(`/admin/products/${product.id}`)}
+    >
+      <CardContent className="p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <h3 className="font-semibold text-gray-900 mb-2">
+              {product.name || "N/A"}
+            </h3>
+            <p className="text-sm text-gray-600 mb-3">
+              {product.description || "N/A"}
+            </p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Price:</span>
+                <span className="font-semibold text-gray-900">
+                  £{product.price || "N/A"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Stock:</span>
+                <span className={`font-medium ${stockStatus.color}`}>
+                  {product.stock ?? "N/A"} ({stockStatus.label || "N/A"})
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Sales:</span>
+                <span className="font-medium text-gray-900">
+                  {product.sales ?? "N/A"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Status:</span>
+                <Badge className={getStatusColor(product.status)}>
+                  {product.status || "N/A"}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+    e.stopPropagation();
+    handleView(product.id);
+  }}
+            className="flex-1"
+          >
+            <Eye className="h-4 w-4 mr-1" />
+            View
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+    e.stopPropagation(); // Prevent card click
+    handleEditProduct(product);
+  }}
+            className="flex-1"
+          >
+            <Edit className="h-4 w-4 mr-1" />
+            Edit
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+    e.stopPropagation(); // 🔥 stops card click
+    handleDeleteProduct(product.id);
+  }}
+            className="text-red-600 hover:bg-red-50"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+})}
+
         </div>
 
         {/* View Product Modal */}
@@ -375,36 +479,36 @@ export default function AdminProductsPage() {
             <DialogHeader>
               <DialogTitle>Product Details</DialogTitle>
             </DialogHeader>
-            {selectedProduct && (
+            {medicineDetail  && (
               <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium text-gray-600">Product Name</Label>
-                    <p className="text-sm text-gray-900 mt-1">{selectedProduct.name}</p>
+                    <p className="text-sm text-gray-900 mt-1">{medicine.name}</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-600">Category</Label>
-                    <p className="text-sm text-gray-900 mt-1">{selectedProduct.category}</p>
+                    <p className="text-sm text-gray-900 mt-1">{medicine.category}</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-600">Price</Label>
-                    <p className="text-lg font-semibold text-gray-900 mt-1">£{selectedProduct.price.toFixed(2)}</p>
+                    <p className="text-lg font-semibold text-gray-900 mt-1">£{medicine.price.toFixed(2)}</p>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-600">Stock</Label>
-                    <p className="text-sm text-gray-900 mt-1">{selectedProduct.stock} units</p>
+                    <p className="text-sm text-gray-900 mt-1">{medicine.stock} units</p>
                   </div>
                   <div className="flex flex-col gap-1">
                     <Label className="text-sm font-medium text-gray-600">Status</Label>
-                    <Badge className={`${getStatusColor(selectedProduct.status)} w-fit`}>{selectedProduct.status}</Badge>
+                    <Badge className={`${getStatusColor(medicine.status)} w-fit`}>{medicine.status}</Badge>
                   </div>
                   <div>
                     <Label className="text-sm font-medium text-gray-600">Total Sales</Label>
-                    <p className="text-sm text-gray-900 mt-1">{selectedProduct.sales} units</p>
+                    <p className="text-sm text-gray-900 mt-1">{medicine.sales} units</p>
                   </div>
                   <div className="col-span-2">
                     <Label className="text-sm font-medium text-gray-600">Description</Label>
-                    <p className="text-sm text-gray-900 mt-1">{selectedProduct.description}</p>
+                    <p className="text-sm text-gray-900 mt-1">{medicine.description}</p>
                   </div>
                 </div>
               </div>

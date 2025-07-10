@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import Logout from "@/components/logout/Logout"
 
 // Sample order data
 const sampleOrders = [
@@ -156,11 +157,9 @@ export default function AdminOrdersPage() {
                  ADMIN PANEL
               </Badge>
             </div>
-            <Link href="/auth/login">
-              <Button variant="outline" className="text-red-600 border-red-500 hover:bg-red-50 sm:text-sm text-xs sm:px-3 px-1.5">
-                Logout
-              </Button>
-            </Link>
+             <div>
+              <Logout />
+            </div>
           </div>
         </div>
       </header>

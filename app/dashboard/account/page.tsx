@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import Image from "next/image"
 import { Switch } from "@/components/ui/switch"
+import Logout from "@/components/logout/Logout"
 
 export default function AccountDetailsPage() {
   const [formData, setFormData] = useState({
@@ -88,11 +89,9 @@ export default function AccountDetailsPage() {
               <Link href="/">
                 <Button className="bg-primary hover:bg-blue-600 text-white">HOME</Button>
               </Link>
-              <Link href="/auth/login">
-                <Button variant="outline" className="text-red-500 border-red-500 hover:bg-red-50">
-                  LOGOUT
-                </Button>
-              </Link>
+               <div>
+                   <Logout />
+                </div>
             </div>
           </div>
         </div>

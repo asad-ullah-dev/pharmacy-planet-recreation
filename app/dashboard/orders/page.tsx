@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import Logout from "@/components/logout/Logout"
 
 // Sample order data with more details
 const sampleOrders = [
@@ -204,9 +205,9 @@ export default function OrdersPage() {
             </div>
             <div className="flex items-center sm:space-x-4 space-x-3">
               <span className="text-sm text-gray-600">My Account</span>
-              <Button variant="outline" size="sm">
-                Logout
-              </Button>
+               <div>
+                  <Logout />
+                </div>
             </div>
           </div>
         </div>

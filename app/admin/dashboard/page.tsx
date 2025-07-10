@@ -7,10 +7,12 @@ import { Badge } from "@/components/ui/badge"
 import { Users, ShoppingCart, TrendingUp, DollarSign, Package, MessageSquare, Calendar, Activity } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
+import { Handle } from "vaul"
+import Logout from "@/components/logout/Logout"
 
 export default function AdminDashboard() {
   const [timeRange, setTimeRange] = useState("7d")
-
   const stats = [
     {
       title: "Total Revenue",
@@ -115,11 +117,9 @@ export default function AdminDashboard() {
                 <Calendar className="sm:h-4 h-2 w-2 sm:w-4 sm:mr-2 mr-1" />
                 Last 7 days
               </Button>
-              <Link href="/auth/login">
-                <Button variant="outline" className="text-red-600 border-red-500 hover:bg-red-50 sm:text-sm text-xs sm:px-3 px-1.5">
-                  Logout
-                </Button>
-              </Link>
+              <div>
+                <Logout />
+              </div>
             </div>
           </div>
         </div>

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Users, Search, Filter, Plus, Edit, Trash2, Eye, ArrowLeft, UserCheck, UserX, Calendar } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import Logout from "@/components/logout/Logout"
 
 // Sample user data
 const sampleUsers = [
@@ -129,11 +130,9 @@ export default function AdminUsersPage() {
                            ADMIN PANEL
                         </Badge>
                       </div>
-                      <Link href="/auth/login">
-                        <Button variant="outline" className="text-red-600 border-red-500 hover:bg-red-50 sm:text-sm text-xs sm:px-3 px-1.5">
-                          Logout
-                        </Button>
-                      </Link>
+                       <div>
+                        <Logout />
+                       </div>
                     </div>
                   </div>
       </header>

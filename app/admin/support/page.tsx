@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { MessageSquare, Search, Filter, Eye, ArrowLeft, Clock, CheckCircle, AlertTriangle, User } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import Logout from "@/components/logout/Logout"
 
 // Sample support ticket data
 const sampleTickets = [
@@ -199,11 +200,9 @@ export default function AdminSupportPage() {
                            ADMIN PANEL
                         </Badge>
                       </div>
-                      <Link href="/auth/login">
-                        <Button variant="outline" className="text-red-600 border-red-500 hover:bg-red-50 sm:text-sm text-xs sm:px-3 px-1.5">
-                          Logout
-                        </Button>
-                      </Link>
+                       <div>
+                          <Logout />
+                        </div>
                     </div>
                   </div>
       </header>

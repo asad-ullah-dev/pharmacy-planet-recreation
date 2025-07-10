@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { User, MapPin, X, ShoppingCart, Mail, MessageCircle, Star, Bell } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import Logout from "@/components/logout/Logout"
 
 export default function DashboardPage() {
   const dashboardItems = [
@@ -91,11 +92,9 @@ export default function DashboardPage() {
               </Link>
 
               {/* Logout */}
-              <Link href="/auth/login">
-                <Button variant="outline" className="text-teal-600 border-teal-500 hover:bg-teal-50">
-                  LOGOUT
-                </Button>
-              </Link>
+               <div>
+                 <Logout />
+              </div>
             </div>
           </div>
         </div>

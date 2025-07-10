@@ -23,44 +23,45 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setIsLoading(true)
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
+  setIsLoading(true);
 
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/auth/login`,
-        {
-          email: formData.email,
-          password: formData.password,
+  try {
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`,
+      {
+        email: formData.email,
+        password: formData.password,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      )
-
-      console.log("Login Success:", response.data)
-
-      // Optional: Store token if provided
-      // localStorage.setItem("token", response.data.token)
-
-      // Redirect after successful login
-      router.push("/admin/dashboard")
-    } catch (err: any) {
-      console.error("Login Error:", err)
-
-      if (err.response && err.response.data) {
-        setError(err.response.data.message || "Invalid credentials")
-      } else {
-        setError("Something went wrong. Please try again.")
       }
-    } finally {
-      setIsLoading(false)
+    );
+
+    console.log("Login Success:", response.data);
+
+    // ✅ Save token and user in localStorage
+    localStorage.setItem("token", response.data.token);
+    localStorage.setItem("user", JSON.stringify(response.data.user));
+ 
+    // ✅ Redirect after successful login
+    router.push("/admin/dashboard");
+  } catch (err: any) {
+    console.error("Login Error:", err);
+
+    if (err.response && err.response.data) {
+      setError(err.response.data.message || "Invalid credentials");
+    } else {
+      setError("Something went wrong. Please try again.");
     }
+  } finally {
+    setIsLoading(false);
   }
+};
 
   return (
     <>
