@@ -50,7 +50,7 @@ export async function updateMedicine(id: number, updatedData) {
 }
 
 export const deleteMedicine = async (id: number) => {
-  const response = await axios.delete(`${BASE_URL}/${id}`, {
+  const response = await axios.delete(`${BASE_URL}/admin/medicines/${id}`, {
     headers: {
        Authorization: `Bearer ${authToken}`,
     },
