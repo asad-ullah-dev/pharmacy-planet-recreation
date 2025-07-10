@@ -30,6 +30,11 @@ import * as yup from "yup";
 import { toast } from "sonner";
 import { useRouter,useParams } from "next/navigation";
 
+// Add client-side check
+const isClient = typeof window !== 'undefined';
+
+// Force dynamic rendering to prevent SSR localStorage issues
+export const dynamic = 'force-dynamic';
 
 type Medicine = {
   id: number;
