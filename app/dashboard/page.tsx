@@ -23,13 +23,13 @@ export default function DashboardPage() {
       href: "/dashboard/address",
       description: "Update your delivery address",
     },
-    {
-      title: "Delete Account",
-      icon: X,
-      href: "/dashboard/delete-account",
-      description: "Permanently delete your account",
-      variant: "destructive" as const,
-    },
+    // {
+    //   title: "Delete Account",
+    //   icon: X,
+    //   href: "/dashboard/delete-account",
+    //   description: "Permanently delete your account",
+    //   variant: "destructive" as const,
+    // },
     {
       title: "My Orders",
       icon: ShoppingCart,

@@ -7,16 +7,74 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import Image from "next/image"
 import Logout from "@/components/logout/Logout"
+import { useState, useEffect } from "react"
+import { createOrUpdateAddress, getUserAddress } from "@/lib/api/addressService"
+import { Address } from "@/lib/types"
+import { toast } from "sonner"
 
 export default function AddressDetailsPage() {
-  const defaultAddress = {
-    name: "John Doe",
-    line1: "#13 Manuel Junction",
-    line2: "Tabaquite",
-    city: "Port of Spain, Trinidad",
-    postcode: "00000",
-    country: "Trinidad & Tobago",
-    phone: "T: 18683087654",
+  const [formData, setFormData] = useState<Address>({
+    first_name: "",
+    last_name: "",
+    phone_number: "",
+    street_address: "",
+    city: "",
+    county: "",
+    country: "",
+    zip_postal_code: "",
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingData, setIsLoadingData] = useState(true)
+
+  // Load existing address data on component mount
+  useEffect(() => {
+    const loadAddress = async () => {
+      try {
+        const address = await getUserAddress()
+        setFormData(address)
+      } catch (error) {
+        console.error('Error loading address:', error)
+        // If no address exists, keep the default form data
+      } finally {
+        setIsLoadingData(false)
+      }
+    }
+
+    loadAddress()
+  }, [])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    try {
+      const response = await createOrUpdateAddress(formData)
+      toast.success(response.message || 'Address saved successfully!')
+    } catch (error) {
+      console.error('Error saving address:', error)
+      // Error handling is done by the API client interceptor
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isLoadingData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading address details...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -138,45 +196,51 @@ export default function AddressDetailsPage() {
                 <div className="mb-8">
                   <h2 className="text-lg font-semibold text-gray-900 mb-6">Edit Address</h2>
 
-                  <form className="space-y-6">
+                  <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Contact Information */}
                     <div>
                       <h3 className="text-base font-medium text-gray-900 mb-4">Contact Information</h3>
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                          <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                          <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
                             First Name
                           </label>
                           <input
                             type="text"
-                            id="firstName"
-                            name="firstName"
-                            defaultValue="John"
+                            id="first_name"
+                            name="first_name"
+                            value={formData.first_name}
+                            onChange={handleInputChange}
+                            required
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                           />
                         </div>
                         <div>
-                          <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                          <label htmlFor="last_name" className="block text-sm font-medium text-gray-700 mb-1">
                             Last Name
                           </label>
                           <input
                             type="text"
-                            id="lastName"
-                            name="lastName"
-                            defaultValue="Doe"
+                            id="last_name"
+                            name="last_name"
+                            value={formData.last_name}
+                            onChange={handleInputChange}
+                            required
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                           />
                         </div>
                       </div>
                       <div className="mt-4">
-                        <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="phone_number" className="block text-sm font-medium text-gray-700 mb-1">
                           Phone Number *
                         </label>
                         <input
                           type="tel"
-                          id="phoneNumber"
-                          name="phoneNumber"
-                          defaultValue="18683087654"
+                          id="phone_number"
+                          name="phone_number"
+                          value={formData.phone_number}
+                          onChange={handleInputChange}
+                          required
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                         />
                       </div>
@@ -188,14 +252,16 @@ export default function AddressDetailsPage() {
                       <div className="space-y-4">
                         <div className="grid md:grid-cols-2 gap-4">
                           <div>
-                            <label htmlFor="streetAddress" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="street_address" className="block text-sm font-medium text-gray-700 mb-1">
                               Street Address
                             </label>
                             <input
                               type="text"
-                              id="streetAddress"
-                              name="streetAddress"
-                              defaultValue="#13 Manuel Junction"
+                              id="street_address"
+                              name="street_address"
+                              value={formData.street_address}
+                              onChange={handleInputChange}
+                              required
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                           </div>
@@ -207,19 +273,12 @@ export default function AddressDetailsPage() {
                               type="text"
                               id="city"
                               name="city"
-                              defaultValue="Port of Spain"
+                              value={formData.city}
+                              onChange={handleInputChange}
+                              required
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                           </div>
-                        </div>
-
-                        <div>
-                          <input
-                            type="text"
-                            name="addressLine2"
-                            defaultValue="Tabaquite"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                          />
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-4">
@@ -231,19 +290,23 @@ export default function AddressDetailsPage() {
                               type="text"
                               id="county"
                               name="county"
-                              defaultValue="Trinidad"
+                              value={formData.county}
+                              onChange={handleInputChange}
+                              required
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                           </div>
                           <div>
-                            <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="zip_postal_code" className="block text-sm font-medium text-gray-700 mb-1">
                               Zip/Postal Code
                             </label>
                             <input
                               type="text"
-                              id="postalCode"
-                              name="postalCode"
-                              defaultValue="00000"
+                              id="zip_postal_code"
+                              name="zip_postal_code"
+                              value={formData.zip_postal_code}
+                              onChange={handleInputChange}
+                              required
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                             />
                           </div>
@@ -256,7 +319,9 @@ export default function AddressDetailsPage() {
                           <select
                             id="country"
                             name="country"
-                            defaultValue="Trinidad & Tobago"
+                            value={formData.country}
+                            onChange={handleInputChange}
+                            required
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                           >
                             <option value="Trinidad & Tobago">Trinidad & Tobago</option>
@@ -283,12 +348,29 @@ export default function AddressDetailsPage() {
                     {/* Save Button */}
                     <div className="pt-4">
                       <Button
-                        className="text-white px-8 py-2"
+                        type="submit"
+                        disabled={isLoading}
+                        className="text-white px-8 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ backgroundColor: "#14b8a6" }}
-                        onMouseEnter={(e) => (e.target.style.backgroundColor = "#0f766e")}
-                        onMouseLeave={(e) => (e.target.style.backgroundColor = "#14b8a6")}
+                        onMouseEnter={(e) => {
+                          if (!isLoading) {
+                            (e.target as HTMLElement).style.backgroundColor = "#0f766e"
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isLoading) {
+                            (e.target as HTMLElement).style.backgroundColor = "#14b8a6"
+                          }
+                        }}
                       >
-                        Save Address
+                        {isLoading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Saving...
+                          </>
+                        ) : (
+                          'Save Address'
+                        )}
                       </Button>
                     </div>
                   </form>

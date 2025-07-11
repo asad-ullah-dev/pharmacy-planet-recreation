@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -13,22 +13,28 @@ import Link from "next/link"
 import Image from "next/image"
 import { Switch } from "@/components/ui/switch"
 import Logout from "@/components/logout/Logout"
+import { getUserProfile, updateUserProfile, ProfileUpdateData } from "@/lib/api/profileService"
+import { toast } from "sonner"
 
 export default function AccountDetailsPage() {
   const [formData, setFormData] = useState({
-    firstName: "John",
-    lastName: "Doe",
-    dobDay: "23",
-    dobMonth: "09",
-    dobYear: "1978",
+    firstName: "",
+    lastName: "",
+    dobDay: "",
+    dobMonth: "",
+    dobYear: "",
     gender: "male",
     changeEmail: false,
     changePassword: false,
-    email: "john.doe@example.com",
+    email: "",
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
+    phoneNumber: "",
   })
+
+  const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingData, setIsLoadingData] = useState(true)
 
   const months = [
     "January",
@@ -45,9 +51,115 @@ export default function AccountDetailsPage() {
     "December",
   ]
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Load existing profile data on component mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const profile = await getUserProfile()
+        
+        // Parse date of birth if it exists
+        let dobDay = "01"
+        let dobMonth = "01"
+        let dobYear = "1990"
+        
+        if (profile.date_of_birth) {
+          const dob = new Date(profile.date_of_birth)
+          dobDay = String(dob.getDate()).padStart(2, "0")
+          dobMonth = String(dob.getMonth() + 1).padStart(2, "0")
+          dobYear = String(dob.getFullYear())
+        }
+
+        setFormData({
+          firstName: profile.first_name || "",
+          lastName: profile.last_name || "",
+          dobDay,
+          dobMonth,
+          dobYear,
+          gender: profile.gender || "male",
+          changeEmail: false,
+          changePassword: false,
+          email: profile.email || "",
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+          phoneNumber: profile.phone_number || "",
+        })
+      } catch (error) {
+        console.error('Error loading profile:', error)
+        // If no profile exists, keep the default form data
+      } finally {
+        setIsLoadingData(false)
+      }
+    }
+
+    loadProfile()
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Account details updated:", formData)
+    setIsLoading(true)
+
+    try {
+      // Prepare the data for API
+      const profileData: ProfileUpdateData = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        phone_number: formData.phoneNumber,
+        gender: formData.gender,
+      }
+
+      // Add date of birth if all fields are filled
+      if (formData.dobDay && formData.dobMonth && formData.dobYear) {
+        const dateOfBirth = `${formData.dobYear}-${formData.dobMonth}-${formData.dobDay}`
+        profileData.date_of_birth = dateOfBirth
+      }
+
+      // Add password fields if password change is requested
+      if (formData.changePassword && formData.newPassword && formData.confirmPassword) {
+        if (formData.newPassword !== formData.confirmPassword) {
+          toast.error("New passwords don't match!")
+          setIsLoading(false)
+          return
+        }
+        if (formData.newPassword.length < 8) {
+          toast.error("Password must be at least 8 characters long!")
+          setIsLoading(false)
+          return
+        }
+        profileData.password = formData.newPassword
+        profileData.password_confirmation = formData.confirmPassword
+      }
+
+      const response = await updateUserProfile(profileData)
+      toast.success(response.message || 'Profile updated successfully!')
+      
+      // Reset password fields after successful update
+      if (formData.changePassword) {
+        setFormData(prev => ({
+          ...prev,
+          changePassword: false,
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        }))
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      // Error handling is done by the API client interceptor
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isLoadingData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading profile details...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -176,6 +288,7 @@ export default function AccountDetailsPage() {
                         value={formData.firstName}
                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                         className="mt-1"
+                        required
                       />
                     </div>
                     <div>
@@ -185,8 +298,22 @@ export default function AccountDetailsPage() {
                         value={formData.lastName}
                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                         className="mt-1"
+                        required
                       />
                     </div>
+                  </div>
+
+                  {/* Phone Number */}
+                  <div>
+                    <Label htmlFor="phoneNumber">Phone Number</Label>
+                    <Input
+                      id="phoneNumber"
+                      type="tel"
+                      value={formData.phoneNumber}
+                      onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                      className="mt-1"
+                      placeholder="Enter your phone number"
+                    />
                   </div>
 
                   {/* Date of Birth */}
@@ -197,6 +324,7 @@ export default function AccountDetailsPage() {
                         className="sm:px-3 px-1.5 py-2 border border-gray-300 rounded-md flex-1"
                         value={formData.dobDay}
                         onChange={(e) => setFormData({ ...formData, dobDay: e.target.value })}
+                        required
                       >
                         {Array.from({ length: 31 }, (_, i) => (
                           <option key={i + 1} value={String(i + 1).padStart(2, "0")}>
@@ -208,6 +336,7 @@ export default function AccountDetailsPage() {
                         className="sm:px-3 px-1.5 py-2 border border-gray-300 rounded-md flex-1"
                         value={formData.dobMonth}
                         onChange={(e) => setFormData({ ...formData, dobMonth: e.target.value })}
+                        required
                       >
                         {months.map((month, index) => (
                           <option key={index + 1} value={String(index + 1).padStart(2, "0")}>
@@ -219,6 +348,7 @@ export default function AccountDetailsPage() {
                         className="sm:px-3 px-1.5 py-2 border border-gray-300 rounded-md flex-1"
                         value={formData.dobYear}
                         onChange={(e) => setFormData({ ...formData, dobYear: e.target.value })}
+                        required
                       >
                         {Array.from({ length: 100 }, (_, i) => {
                           const year = new Date().getFullYear() - i
@@ -244,6 +374,7 @@ export default function AccountDetailsPage() {
                           checked={formData.gender === "male"}
                           onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                           className="sr-only"
+                          required
                         />
                         <div
                           className={`w-full text-center py-3 px-4 rounded-lg border-2 transition-all ${
@@ -263,6 +394,7 @@ export default function AccountDetailsPage() {
                           checked={formData.gender === "female"}
                           onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                           className="sr-only"
+                          required
                         />
                         <div
                           className={`w-full text-center py-3 px-4 rounded-lg border-2 transition-all ${
@@ -280,14 +412,6 @@ export default function AccountDetailsPage() {
                   {/* Change Options */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="changeEmail">Change Email</Label>
-                      <Switch
-                        id="changeEmail"
-                        checked={formData.changeEmail}
-                        onCheckedChange={(checked) => setFormData({ ...formData, changeEmail: checked as boolean })}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between">
                       <Label htmlFor="changePassword">Change Password</Label>
                       <Switch
                         id="changePassword"
@@ -297,40 +421,11 @@ export default function AccountDetailsPage() {
                     </div>
                   </div>
 
-                  {/* Email Section */}
-                  {formData.changeEmail && (
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Email</h3>
-                      <div className="max-w-md">
-                        <Label htmlFor="email">New Email Address</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="mt-1"
-                          placeholder="Enter your new email address"
-                        />
-                      </div>
-                    </div>
-                  )}
-
                   {/* Password Section */}
                   {formData.changePassword && (
                     <div className="border-t pt-6">
                       <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
                       <div className="space-y-4 max-w-md">
-                        <div>
-                          <Label htmlFor="currentPassword">Current Password</Label>
-                          <Input
-                            id="currentPassword"
-                            type="password"
-                            value={formData.currentPassword}
-                            onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                            className="mt-1"
-                            placeholder="Enter your current password"
-                          />
-                        </div>
                         <div>
                           <Label htmlFor="newPassword">New Password</Label>
                           <Input
@@ -340,7 +435,9 @@ export default function AccountDetailsPage() {
                             onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                             className="mt-1"
                             placeholder="Enter your new password"
+                            minLength={8}
                           />
+                          <p className="text-sm text-gray-500 mt-1">Password must be at least 8 characters long</p>
                         </div>
                         <div>
                           <Label htmlFor="confirmPassword">Confirm New Password</Label>
@@ -351,6 +448,7 @@ export default function AccountDetailsPage() {
                             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                             className="mt-1"
                             placeholder="Confirm your new password"
+                            minLength={8}
                           />
                         </div>
                       </div>
@@ -361,12 +459,28 @@ export default function AccountDetailsPage() {
                   <div className="pt-6">
                     <Button
                       type="submit"
-                      className="text-white px-8"
+                      disabled={isLoading}
+                      className="text-white px-8 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{ backgroundColor: "#14b8a6" }}
-                      onMouseEnter={(e) => (e.target.style.backgroundColor = "#0f766e")}
-                      onMouseLeave={(e) => (e.target.style.backgroundColor = "#14b8a6")}
+                      onMouseEnter={(e) => {
+                        if (!isLoading) {
+                          (e.target as HTMLElement).style.backgroundColor = "#0f766e"
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isLoading) {
+                          (e.target as HTMLElement).style.backgroundColor = "#14b8a6"
+                        }
+                      }}
                     >
-                      Save
+                      {isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        'Save'
+                      )}
                     </Button>
                   </div>
                 </form>

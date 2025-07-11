@@ -145,4 +145,27 @@ export interface SupportTicket {
   user_id: number
   created_at: string
   updated_at: string
+}
+
+// Address types
+export interface Address {
+  id?: number
+  first_name: string
+  last_name: string
+  phone_number: string
+  street_address: string
+  city: string
+  county: string
+  country: string
+  zip_postal_code: string
+  is_default_billing?: boolean
+  is_default_shipping?: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+export interface AddressResponse {
+  data: Address
+  message?: string
+  success: boolean
 } 
