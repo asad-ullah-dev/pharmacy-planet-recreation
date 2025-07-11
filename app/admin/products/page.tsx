@@ -35,6 +35,7 @@ import { FilePond, registerPlugin } from 'react-filepond';
 import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
 import 'filepond/dist/filepond.min.css';
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
+import { Select, SelectValue, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 
 registerPlugin(FilePondPluginImagePreview);
 
@@ -49,6 +50,7 @@ type ExtendedMedicine = Medicine & {
   short_description?: string
   sales?: number
   images?: string[]
+  total_sold?: number
 }
 
 const schema = yup.object().shape({
@@ -59,6 +61,7 @@ const schema = yup.object().shape({
   stock: yup.number().typeError("Stock must be a number").required("Stock is required"),
   expiry_date: yup.string().required("Expiry Date is required"),
   short_description: yup.string().required("Short description is required"),
+  status: yup.string().required("Status is required"),
   // images: yup.array().min(1, "At least one image is required"), // optional
 })
 
@@ -173,42 +176,40 @@ export default function AdminProductsPage() {
 
   const handleEditFilePondUpdate = (fileItems: any[]) => {
     // Only keep sources for local files (existing images)
-    const currentSources = fileItems
-      .filter(item => item.options?.type === 'local')
-      .map(item => item.source);
-    setExistingImages(currentSources);
+   
     setEditFiles(fileItems);
   };
 
   const handleSaveEdit = async () => {
     if (!selectedProduct) return
     try {
+      console.log(existingImages,'existingImages')
       setEditLoading(true)
       const formData = new FormData();
       formData.append('name', editForm.name);
       formData.append('description', editForm.description);
+      formData.append('short_description', editForm.short_description);
+      formData.append('expiry_date', editForm.expiry_date);
+      formData.append('_method', 'PUT');
       formData.append('price', editForm.price);
       formData.append('stock', editForm.stock);
       formData.append('category', editForm.category);
       formData.append('status', editForm.status);
       // Add existing images
-      if (existingImages.length > 0) {
-        existingImages.forEach((url, idx) => {
-          formData.append(`existing_images[${idx}]`, url);
-        });
-      }
+      existingImages.forEach((url, idx) => {
+        formData.append(`existing_images[${idx}]`, url);
+      });
 
       // Add new images if files exist
-      const newFiles = editFiles.filter(item => item.file && item.options?.type !== 'local');
+      const newFiles = editFiles.filter(item => item.file);
       if (newFiles.length > 0) {
         newFiles.forEach((item, idx) => {
           formData.append(`images[${idx}]`, item.file);
         });
-        formData.append('has_files', 'true');
-      }
+       }
       await updateMedicine(selectedProduct.id, formData);
       toast.success("Product updated successfully")
-      fetchMedicines()
+      fetchMedicines();
       setIsEditModalOpen(false)
     } catch (error) {
       toast.error("Failed to update product")
@@ -266,15 +267,10 @@ export default function AdminProductsPage() {
         expiry_date: latest.expiry_date || "",
         short_description: (latest as any).short_description || "",
       });
-      // Set up FilePond for existing images
+      // Set up FilePond for existing images (with preview)
       const imgs = (latest as any).images || [];
       setExistingImages(imgs);
-      setEditFiles(
-        imgs.map((url: string, idx: number) => ({
-          source: url,
-          options: { type: 'local', file: { name: `existing_${idx}`, type: 'image/*' } }
-        }))
-      );
+       
       setIsEditModalOpen(true);
     } catch (err) {
       toast.error('Failed to fetch product details');
@@ -785,6 +781,31 @@ export default function AdminProductsPage() {
                   onChange={(e) => setEditForm({ ...editForm, short_description: e.target.value })}
                 />
               </div>
+              {/* Removed Existing Images preview and delete UI, as images are not part of editForm */}
+              <div>
+                <Label>Existing Images</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-2">
+                  {existingImages.map((image, index) => (
+                    <div key={index} className="relative">
+                      <button
+                        onClick={() => {
+                          setExistingImages(existingImages.filter((_, i) => i !== index));
+                        }}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                      <Image
+                        src={image}
+                        alt={`Product image ${index + 1}`}
+                        width={200}
+                        height={200}
+                        className="rounded-lg object-cover w-full h-32"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div>
                 <Label htmlFor="edit-images">Images (Multiple)</Label>
                 <FilePond
@@ -795,6 +816,21 @@ export default function AdminProductsPage() {
                   name="images"
                   labelIdle='Drag & Drop your files or <span class="filepond--label-action">Browse</span>'
                 />
+              </div>
+              <div>
+                <Label htmlFor="edit-status">Status</Label>
+                <Select 
+                  value={editForm.status}
+                  onValueChange={(value) => setEditForm({ ...editForm, status: value as "Active" | "Inactive" })}
+                >
+                  <SelectTrigger id="edit-status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>

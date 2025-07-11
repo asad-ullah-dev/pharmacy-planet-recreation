@@ -28,8 +28,13 @@ export const getMedicineById = async (id: number): Promise<Medicine> => {
   return response.data
 }
 
-export const updateMedicine = async (id: number, updatedData: Partial<Medicine>): Promise<ApiResponse<Medicine>> => {
-  return await apiClient.put<ApiResponse<Medicine>>(`/admin/medicines/${id}`, updatedData)
+export const updateMedicine = async (id: number, updatedData: FormData): Promise<ApiResponse<Medicine>> => {
+  return await apiClient.post<ApiResponse<Medicine>>(`/admin/medicines/${id}`, updatedData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      'Accept': 'application/json',
+    },
+  })
 }
 
 export const deleteMedicine = async (id: number): Promise<ApiResponse<void>> => {
