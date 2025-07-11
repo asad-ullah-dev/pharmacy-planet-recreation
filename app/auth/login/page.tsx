@@ -7,61 +7,56 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, Mail, Lock, AlertCircle, Phone, MapPin } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import axios from "axios"
+import { useForm } from "react-hook-form"
+import { yupResolver } from "@hookform/resolvers/yup"
+import { loginSchema } from "@/lib/validation/auth"
+import { login } from "@/lib/api/authService"
+import { pharmacyToasts, showLoadingToast, dismissToast } from "@/lib/toast-config"
+import { LoginCredentials } from "@/lib/types"
 
 export default function LoginPage() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  })
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError("");
-  setIsLoading(true);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginCredentials>({
+    resolver: yupResolver(loginSchema),
+  })
 
-  try {
-    const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`,
-      {
-        email: formData.email,
-        password: formData.password,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
+  const onSubmit = async (data: LoginCredentials) => {
+    setIsLoading(true)
+    const loadingToast = showLoadingToast('Signing you in...')
+
+    try {
+      const response = await login(data)
+      console.log(response,'response')
+      
+      dismissToast(loadingToast)
+      pharmacyToasts.loginSuccess()
+      console.log(response.user.role.name,'role name')
+      
+      // Redirect based on user role
+      if (response.user.role.name === 'admin') {
+        router.push("/admin/dashboard")
+      } else {
+        router.push("/dashboard")
       }
-    );
-
-    console.log("Login Success:", response.data);
-
-    // ✅ Save token and user in localStorage
-    localStorage.setItem("token", response.data.token);
-    localStorage.setItem("user", JSON.stringify(response.data.user));
- 
-    // ✅ Redirect after successful login
-    router.push("/admin/dashboard");
-  } catch (err: any) {
-    console.error("Login Error:", err);
-
-    if (err.response && err.response.data) {
-      setError(err.response.data.message || "Invalid credentials");
-    } else {
-      setError("Something went wrong. Please try again.");
+    } catch (error) {
+      dismissToast(loadingToast)
+      pharmacyToasts.loginError()
+      console.error("Login Error:", error)
+    } finally {
+      setIsLoading(false)
     }
-  } finally {
-    setIsLoading(false);
   }
-};
 
   return (
     <>
@@ -94,30 +89,23 @@ export default function LoginPage() {
               <CardDescription>Enter your credentials to access your account</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 <div>
                   <Label htmlFor="email">Email address</Label>
                   <div className="mt-1 relative">
                     <Input
                       id="email"
-                      name="email"
                       type="email"
                       autoComplete="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="pl-10"
+                      {...register("email")}
+                      className={`pl-10 ${errors.email ? 'border-red-500' : ''}`}
                       placeholder="Enter your email"
                     />
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   </div>
+                  {errors.email && (
+                    <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                  )}
                 </div>
 
                 <div>
@@ -125,13 +113,10 @@ export default function LoginPage() {
                   <div className="mt-1 relative">
                     <Input
                       id="password"
-                      name="password"
                       type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
-                      required
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="pl-10 pr-10"
+                      {...register("password")}
+                      className={`pl-10 pr-10 ${errors.password ? 'border-red-500' : ''}`}
                       placeholder="Enter your password"
                     />
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -143,6 +128,9 @@ export default function LoginPage() {
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
+                  {errors.password && (
+                    <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -171,22 +159,15 @@ export default function LoginPage() {
                     className="w-full text-white"
                     disabled={isLoading}
                     style={{ backgroundColor: "#14b8a6" }}
-                    onMouseEnter={(e) => !isLoading && (e.target.style.backgroundColor = "#0f766e")}
-                    onMouseLeave={(e) => !isLoading && (e.target.style.backgroundColor = "#14b8a6")}
                   >
                     {isLoading ? "Signing in..." : "Sign in"}
                   </Button>
-                </div>
-
-                <div className="text-center text-sm text-gray-600">
-                  <p>Demo Admin Access:</p>
-                  <p className="font-mono text-xs">admin@example.com / 12345678</p>
                 </div>
               </form>
             </CardContent>
           </Card>
 
-          {/* Sidebar with slogan - only show on signup */}
+          {/* Sidebar with slogan */}
           <div className="mt-8 text-center">
             <Image
               src="/images/weight-loss-slogan.png"
@@ -198,138 +179,6 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="mb-4">
-                <Image
-                  src="/images/ozempo-logo.png"
-                  alt="Ozempo"
-                  width={120}
-                  height={32}
-                  className="h-8 w-auto brightness-0 invert"
-                />
-              </div>
-              <p className="text-gray-400 text-sm">
-                Your trusted partner for online medical consultations and healthcare solutions.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="/treatments" className="text-gray-400 hover:text-white">
-                    Treatments
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about" className="text-gray-400 hover:text-white">
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className="text-gray-400 hover:text-white">
-                    Contact
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/privacy-policy" className="text-gray-400 hover:text-white">
-                    Privacy Policy
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="/privacy-policy" className="text-gray-400 hover:text-white">
-                    Privacy Policy
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/terms-conditions" className="text-gray-400 hover:text-white">
-                    Terms & Conditions
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/cookie-policy" className="text-gray-400 hover:text-white">
-                    Cookie Policy
-                  </Link>
-                </li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Contact Info</h4>
-              <div className="space-y-2 text-sm text-gray-400">
-                <div className="flex items-center">
-                  <Phone className="w-4 h-4 mr-2" />
-                  <span>+44 20 1234 5678</span>
-                </div>
-                <div className="flex items-center">
-                  <Mail className="w-4 h-4 mr-2" />
-                  <span>info@ozempo.com</span>
-                </div>
-                <div className="flex items-center">
-                  <MapPin className="w-4 h-4 mr-2" />
-                  <span>London, UK</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Trust Logos Section */}
-          <div className="border-t border-gray-800 mt-8 pt-8">
-            <div className="flex flex-wrap justify-center items-center gap-6 mb-6">
-              <div className="bg-white p-3 rounded-lg">
-                <Image
-                  src="/placeholder.svg?height=40&width=120"
-                  alt="Novo Nordisk"
-                  width={120}
-                  height={40}
-                  className="h-10 w-auto"
-                />
-              </div>
-              <div className="bg-white p-3 rounded-lg">
-                <Image
-                  src="/placeholder.svg?height=40&width=80"
-                  alt="Lilly"
-                  width={80}
-                  height={40}
-                  className="h-10 w-auto"
-                />
-              </div>
-              <div className="bg-white p-3 rounded-lg">
-                <Image
-                  src="/placeholder.svg?height=40&width=100"
-                  alt="Verified Website"
-                  width={100}
-                  height={40}
-                  className="h-10 w-auto"
-                />
-              </div>
-              <div className="bg-white p-3 rounded-lg">
-                <Image
-                  src="/placeholder.svg?height=40&width=120"
-                  alt="Registered Pharmacy"
-                  width={120}
-                  height={40}
-                  className="h-10 w-auto"
-                />
-              </div>
-            </div>
-            <div className="text-center text-sm text-gray-400">
-              <p>&copy; 2024 Ozempo. All rights reserved.</p>
-            </div>
-          </div>
-        </div>
-      </footer>
     </>
   )
 }

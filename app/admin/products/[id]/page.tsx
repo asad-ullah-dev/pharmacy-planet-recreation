@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getMedicineById } from "@/app/lib/api/medicineService";
+import { getMedicineById } from "@/lib/api/medicineService";
 
 export default function ProductDetailPage() {
   const params = useParams<{ id: string }>();

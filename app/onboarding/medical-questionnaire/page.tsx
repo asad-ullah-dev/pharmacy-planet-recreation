@@ -11,6 +11,7 @@ import { ArrowLeft, Phone, Mail, MapPin } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import WithAuth from "@/components/auth/WithAuth"
 
 export default function MedicalQuestionnairePage() {
   const router = useRouter()
@@ -32,7 +33,8 @@ export default function MedicalQuestionnairePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <WithAuth requiredRole="user" redirectTo="/auth/login">
+      <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="border-b border-gray-200 bg-white">
         <div className="container mx-auto px-4 py-4">
@@ -469,5 +471,6 @@ export default function MedicalQuestionnairePage() {
         </div>
       </footer>
     </div>
+    </WithAuth>
   )
 }

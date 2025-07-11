@@ -10,6 +10,7 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Handle } from "vaul"
 import Logout from "@/components/logout/Logout"
+import WithAuth from "@/components/auth/WithAuth"
 
 export default function AdminDashboard() {
   const [timeRange, setTimeRange] = useState("7d")
@@ -101,7 +102,8 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <WithAuth requiredRole="admin" redirectTo="/auth/login">
+      <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -245,5 +247,6 @@ export default function AdminDashboard() {
         </Card>
       </div>
     </div>
+    </WithAuth>
   )
 }

@@ -1,10 +1,14 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'Ozempo - Online Medical Consultations',
+  description: 'Get expert medical advice from qualified doctors. Fast, secure, and convenient healthcare from the comfort of your home.',
+  generator: 'Next.js',
+  keywords: ['pharmacy', 'telemedicine', 'medical consultation', 'online healthcare', 'prescription'],
+  authors: [{ name: 'Ozempo Team' }],
+  viewport: 'width=device-width, initial-scale=1',
 }
 
 export default function RootLayout({
@@ -14,7 +18,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster 
+          position="top-right"
+          richColors
+          closeButton
+          duration={4000}
+        />
+      </body>
     </html>
   )
 }

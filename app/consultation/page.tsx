@@ -12,10 +12,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ArrowLeft, FileText } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { pharmacyToasts, showLoadingToast, dismissToast } from "@/lib/toast-config"
+import { ConsultationFormData } from "@/lib/types"
+import WithAuth from "@/components/auth/WithAuth"
 
 export default function ConsultationPage() {
   const router = useRouter()
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ConsultationFormData>({
     hasType2Diabetes: "",
     a1cLevel: "",
     currentDiabetesMeds: "",
@@ -36,33 +39,62 @@ export default function ConsultationPage() {
     comfortableWithInjection: "",
     understandsRisks: "",
   })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof ConsultationFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
-    console.log("Form submitted:", formData)
-    // Navigate to products page
-    router.push("/products")
+    
+    // Basic validation
+    if (!formData.hasType2Diabetes || !formData.understandsRisks) {
+      pharmacyToasts.validationError()
+      return
+    }
+
+    setIsSubmitting(true)
+    const loadingToast = showLoadingToast('Submitting your consultation...')
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      dismissToast(loadingToast)
+      pharmacyToasts.consultationSubmitted()
+      
+      // Navigate to products page
+      router.push("/products")
+    } catch (error) {
+      dismissToast(loadingToast)
+      pharmacyToasts.consultationError()
+      console.error("Consultation submission error:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <WithAuth requiredRole="user" redirectTo="/auth/login">
+      <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="border-b border-gray-200 bg-white sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center sm:mr-8 mr-2">
-              <Image src="/images/ozempo-logo.png" alt="Ozempo" width={150} height={40} className="h-10 w-auto" />
-            </Link>
+            <div className="flex items-center lg:space-x-8 space-x-4">
+              <Link href="/" className="flex items-center">
+                <Image src="/images/ozempo-logo.png" alt="Ozempo" width={150} height={40} className="h-10 w-auto" />
+              </Link>
+              <div className="hidden md:block">
+                <span className="lg:text-sm text-xs font-medium text-gray-600">WEIGHT LOSS CLINIC</span>
+              </div>
+            </div>
 
             <div className="flex items-center space-x-4">
               <Link href="/">
-                <Button variant="outline" className="flex items-center">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
+                <Button variant="outline" size="sm">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Home
                 </Button>
               </Link>
@@ -71,7 +103,6 @@ export default function ConsultationPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Page Header */}
@@ -112,24 +143,40 @@ export default function ConsultationPage() {
             {/* Question 2 */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">What is your most recent A1C (if known)?</CardTitle>
+                <CardTitle className="text-lg">What is your current A1C level?</CardTitle>
+                <p className="text-sm text-gray-600">(If you don't know, please select "Don't know")</p>
               </CardHeader>
               <CardContent>
-                <Input
-                  placeholder="Enter your A1C level (e.g., 7.2%)"
+                <RadioGroup
                   value={formData.a1cLevel}
-                  onChange={(e) => handleInputChange("a1cLevel", e.target.value)}
-                />
+                  onValueChange={(value) => handleInputChange("a1cLevel", value)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="below-6.5" id="a1c-below" />
+                    <Label htmlFor="a1c-below">Below 6.5%</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="6.5-7.5" id="a1c-6.5-7.5" />
+                    <Label htmlFor="a1c-6.5-7.5">6.5% - 7.5%</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="above-7.5" id="a1c-above" />
+                    <Label htmlFor="a1c-above">Above 7.5%</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="dont-know" id="a1c-dont-know" />
+                    <Label htmlFor="a1c-dont-know">Don't know</Label>
+                  </div>
+                </RadioGroup>
               </CardContent>
             </Card>
 
             {/* Question 3 */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Are you currently taking any diabetes medications?</CardTitle>
-                <p className="text-sm text-gray-600">Please list all diabetes-related medications.</p>
+                <CardTitle className="text-lg">Are you currently taking diabetes medications?</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <RadioGroup
                   value={formData.currentDiabetesMeds}
                   onValueChange={(value) => handleInputChange("currentDiabetesMeds", value)}
@@ -143,12 +190,18 @@ export default function ConsultationPage() {
                     <Label htmlFor="meds-no">No</Label>
                   </div>
                 </RadioGroup>
+                
                 {formData.currentDiabetesMeds === "yes" && (
-                  <Textarea
-                    placeholder="Please list all diabetes medications you are currently taking"
-                    value={formData.diabetesMedsList}
-                    onChange={(e) => handleInputChange("diabetesMedsList", e.target.value)}
-                  />
+                  <div className="mt-4">
+                    <Label htmlFor="diabetesMedsList">Please list your current diabetes medications:</Label>
+                    <Textarea
+                      id="diabetesMedsList"
+                      value={formData.diabetesMedsList}
+                      onChange={(e) => handleInputChange("diabetesMedsList", e.target.value)}
+                      placeholder="e.g., Metformin, Glipizide, etc."
+                      className="mt-2"
+                    />
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -156,8 +209,8 @@ export default function ConsultationPage() {
             {/* Question 4 */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Have you ever taken Ozempic or another GLP-1 medication?</CardTitle>
-                <p className="text-sm text-gray-600">(e.g., Wegovy, Mounjaro, Trulicity)</p>
+                <CardTitle className="text-lg">Have you previously taken GLP-1 medications?</CardTitle>
+                <p className="text-sm text-gray-600">(Such as Ozempic, Wegovy, Saxenda, etc.)</p>
               </CardHeader>
               <CardContent>
                 <RadioGroup
@@ -176,287 +229,277 @@ export default function ConsultationPage() {
               </CardContent>
             </Card>
 
-            {/* Question 5 */}
+            {/* Medical History Questions */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">
-                  Do you have a personal or family history of medullary thyroid carcinoma (MTC) or multiple endocrine
-                  neoplasia syndrome type 2 (MEN 2)?
-                </CardTitle>
+                <CardTitle className="text-lg">Medical History</CardTitle>
+                <p className="text-sm text-gray-600">Please answer the following questions about your medical history:</p>
               </CardHeader>
-              <CardContent>
-                <RadioGroup
-                  value={formData.thyroidHistory}
-                  onValueChange={(value) => handleInputChange("thyroidHistory", value)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="thyroid-yes" />
-                    <Label htmlFor="thyroid-yes">Yes</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="thyroid-no" />
-                    <Label htmlFor="thyroid-no">No</Label>
-                  </div>
-                </RadioGroup>
-              </CardContent>
-            </Card>
-
-            {/* Question 6 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Do you have a history of pancreatitis?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RadioGroup
-                  value={formData.pancreatitisHistory}
-                  onValueChange={(value) => handleInputChange("pancreatitisHistory", value)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="pancreatitis-yes" />
-                    <Label htmlFor="pancreatitis-yes">Yes</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="pancreatitis-no" />
-                    <Label htmlFor="pancreatitis-no">No</Label>
-                  </div>
-                </RadioGroup>
-              </CardContent>
-            </Card>
-
-            {/* Question 7 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Do you currently have any kidney or liver disease?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RadioGroup
-                  value={formData.kidneyLiverDisease}
-                  onValueChange={(value) => handleInputChange("kidneyLiverDisease", value)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="kidney-liver-yes" />
-                    <Label htmlFor="kidney-liver-yes">Yes</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="kidney-liver-no" />
-                    <Label htmlFor="kidney-liver-no">No</Label>
-                  </div>
-                </RadioGroup>
-              </CardContent>
-            </Card>
-
-            {/* Question 8 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Do you have any gastrointestinal conditions?</CardTitle>
-                <p className="text-sm text-gray-600">Such as gastroparesis (slow stomach emptying)</p>
-              </CardHeader>
-              <CardContent>
-                <RadioGroup
-                  value={formData.giConditions}
-                  onValueChange={(value) => handleInputChange("giConditions", value)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="gi-yes" />
-                    <Label htmlFor="gi-yes">Yes</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="gi-no" />
-                    <Label htmlFor="gi-no">No</Label>
-                  </div>
-                </RadioGroup>
-              </CardContent>
-            </Card>
-
-            {/* Question 9 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  Are you pregnant, trying to become pregnant, or breastfeeding?
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RadioGroup
-                  value={formData.pregnancyStatus}
-                  onValueChange={(value) => handleInputChange("pregnancyStatus", value)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="pregnancy-yes" />
-                    <Label htmlFor="pregnancy-yes">Yes</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="pregnancy-no" />
-                    <Label htmlFor="pregnancy-no">No</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="na" id="pregnancy-na" />
-                    <Label htmlFor="pregnancy-na">Not applicable</Label>
-                  </div>
-                </RadioGroup>
-              </CardContent>
-            </Card>
-
-            {/* Question 10 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Do you have any allergies to medications?</CardTitle>
-                <p className="text-sm text-gray-600">If yes, please specify.</p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <RadioGroup value={formData.allergies} onValueChange={(value) => handleInputChange("allergies", value)}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="allergies-yes" />
-                    <Label htmlFor="allergies-yes">Yes</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="allergies-no" />
-                    <Label htmlFor="allergies-no">No</Label>
-                  </div>
-                </RadioGroup>
-                {formData.allergies === "yes" && (
-                  <Textarea
-                    placeholder="Please specify your medication allergies"
-                    value={formData.allergiesList}
-                    onChange={(e) => handleInputChange("allergiesList", e.target.value)}
-                  />
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Question 11 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">What is your height and current weight?</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-4">
+              <CardContent className="space-y-6">
                 <div>
-                  <Label htmlFor="height">Height</Label>
-                  <Input
-                    id="height"
-                    placeholder="e.g., 5'8&quot; or 173 cm"
-                    value={formData.height}
-                    onChange={(e) => handleInputChange("height", e.target.value)}
-                  />
+                  <Label className="text-base font-medium">Do you have a history of thyroid problems?</Label>
+                  <RadioGroup
+                    value={formData.thyroidHistory}
+                    onValueChange={(value) => handleInputChange("thyroidHistory", value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="thyroid-yes" />
+                      <Label htmlFor="thyroid-yes">Yes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="thyroid-no" />
+                      <Label htmlFor="thyroid-no">No</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
+
                 <div>
-                  <Label htmlFor="weight">Weight</Label>
-                  <Input
-                    id="weight"
-                    placeholder="e.g., 180 lbs or 82 kg"
-                    value={formData.weight}
-                    onChange={(e) => handleInputChange("weight", e.target.value)}
-                  />
+                  <Label className="text-base font-medium">Do you have a history of pancreatitis?</Label>
+                  <RadioGroup
+                    value={formData.pancreatitisHistory}
+                    onValueChange={(value) => handleInputChange("pancreatitisHistory", value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="pancreatitis-yes" />
+                      <Label htmlFor="pancreatitis-yes">Yes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="pancreatitis-no" />
+                      <Label htmlFor="pancreatitis-no">No</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div>
+                  <Label className="text-base font-medium">Do you have kidney or liver disease?</Label>
+                  <RadioGroup
+                    value={formData.kidneyLiverDisease}
+                    onValueChange={(value) => handleInputChange("kidneyLiverDisease", value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="kidney-yes" />
+                      <Label htmlFor="kidney-yes">Yes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="kidney-no" />
+                      <Label htmlFor="kidney-no">No</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div>
+                  <Label className="text-base font-medium">Do you have any gastrointestinal conditions?</Label>
+                  <RadioGroup
+                    value={formData.giConditions}
+                    onValueChange={(value) => handleInputChange("giConditions", value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="gi-yes" />
+                      <Label htmlFor="gi-yes">Yes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="gi-no" />
+                      <Label htmlFor="gi-no">No</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Question 12 */}
+            {/* Current Status */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Do you consume alcohol?</CardTitle>
-                <p className="text-sm text-gray-600">If yes, how frequently and how much?</p>
+                <CardTitle className="text-lg">Current Status</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <RadioGroup
-                  value={formData.alcoholConsumption}
-                  onValueChange={(value) => handleInputChange("alcoholConsumption", value)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="alcohol-yes" />
-                    <Label htmlFor="alcohol-yes">Yes</Label>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label className="text-base font-medium">Are you currently pregnant or planning to become pregnant?</Label>
+                  <RadioGroup
+                    value={formData.pregnancyStatus}
+                    onValueChange={(value) => handleInputChange("pregnancyStatus", value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="pregnancy-yes" />
+                      <Label htmlFor="pregnancy-yes">Yes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="pregnancy-no" />
+                      <Label htmlFor="pregnancy-no">No</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div>
+                  <Label className="text-base font-medium">Do you have any allergies to medications?</Label>
+                  <RadioGroup
+                    value={formData.allergies}
+                    onValueChange={(value) => handleInputChange("allergies", value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="allergies-yes" />
+                      <Label htmlFor="allergies-yes">Yes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="allergies-no" />
+                      <Label htmlFor="allergies-no">No</Label>
+                    </div>
+                  </RadioGroup>
+                  
+                  {formData.allergies === "yes" && (
+                    <div className="mt-4">
+                      <Label htmlFor="allergiesList">Please list your medication allergies:</Label>
+                      <Textarea
+                        id="allergiesList"
+                        value={formData.allergiesList}
+                        onChange={(e) => handleInputChange("allergiesList", e.target.value)}
+                        placeholder="e.g., Penicillin, Sulfa drugs, etc."
+                        className="mt-2"
+                      />
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Measurements */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Current Measurements</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="height">Height</Label>
+                    <Input
+                      id="height"
+                      value={formData.height}
+                      onChange={(e) => handleInputChange("height", e.target.value)}
+                      placeholder="e.g., 5'8&quot; or 173cm"
+                    />
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="alcohol-no" />
-                    <Label htmlFor="alcohol-no">No</Label>
+                  <div>
+                    <Label htmlFor="weight">Weight</Label>
+                    <Input
+                      id="weight"
+                      value={formData.weight}
+                      onChange={(e) => handleInputChange("weight", e.target.value)}
+                      placeholder="e.g., 150 lbs or 68 kg"
+                    />
                   </div>
-                </RadioGroup>
-                {formData.alcoholConsumption === "yes" && (
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Lifestyle Questions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Lifestyle Information</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label className="text-base font-medium">Do you consume alcohol?</Label>
+                  <RadioGroup
+                    value={formData.alcoholConsumption}
+                    onValueChange={(value) => handleInputChange("alcoholConsumption", value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="alcohol-yes" />
+                      <Label htmlFor="alcohol-yes">Yes</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="alcohol-no" />
+                      <Label htmlFor="alcohol-no">No</Label>
+                    </div>
+                  </RadioGroup>
+                  
+                  {formData.alcoholConsumption === "yes" && (
+                    <div className="mt-4">
+                      <Label htmlFor="alcoholDetails">Please describe your alcohol consumption:</Label>
+                      <Textarea
+                        id="alcoholDetails"
+                        value={formData.alcoholDetails}
+                        onChange={(e) => handleInputChange("alcoholDetails", e.target.value)}
+                        placeholder="e.g., 2-3 drinks per week"
+                        className="mt-2"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="currentMedications">List any other current medications (including supplements):</Label>
                   <Textarea
-                    placeholder="Please describe your alcohol consumption (frequency and amount)"
-                    value={formData.alcoholDetails}
-                    onChange={(e) => handleInputChange("alcoholDetails", e.target.value)}
+                    id="currentMedications"
+                    value={formData.currentMedications}
+                    onChange={(e) => handleInputChange("currentMedications", e.target.value)}
+                    placeholder="e.g., Blood pressure medication, vitamins, etc."
+                    className="mt-2"
                   />
-                )}
+                </div>
               </CardContent>
             </Card>
 
-            {/* Question 13 */}
+            {/* Comfort and Understanding */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">
-                  List all prescription medications, over-the-counter drugs, and supplements you are currently taking.
-                </CardTitle>
+                <CardTitle className="text-lg">Comfort and Understanding</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder="Please list all medications and supplements, including dosages if known"
-                  value={formData.currentMedications}
-                  onChange={(e) => handleInputChange("currentMedications", e.target.value)}
-                  rows={4}
-                />
-              </CardContent>
-            </Card>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label className="text-base font-medium">Are you comfortable with self-injection?</Label>
+                  <RadioGroup
+                    value={formData.comfortableWithInjection}
+                    onValueChange={(value) => handleInputChange("comfortableWithInjection", value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="injection-yes" />
+                      <Label htmlFor="injection-yes">Yes, I am comfortable with self-injection</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="injection-no" />
+                      <Label htmlFor="injection-no">No, I would need training or assistance</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
 
-            {/* Question 14 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  Are you comfortable using a once-weekly injectable medication?
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <RadioGroup
-                  value={formData.comfortableWithInjection}
-                  onValueChange={(value) => handleInputChange("comfortableWithInjection", value)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="injection-yes" />
-                    <Label htmlFor="injection-yes">Yes</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="injection-no" />
-                    <Label htmlFor="injection-no">No</Label>
-                  </div>
-                </RadioGroup>
-              </CardContent>
-            </Card>
-
-            {/* Question 15 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  Do you understand the risks and side effects associated with Ozempic?
-                </CardTitle>
-                <p className="text-sm text-gray-600">
-                  Including gastrointestinal symptoms and potential thyroid tumors
-                </p>
-              </CardHeader>
-              <CardContent>
-                <RadioGroup
-                  value={formData.understandsRisks}
-                  onValueChange={(value) => handleInputChange("understandsRisks", value)}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="risks-yes" />
-                    <Label htmlFor="risks-yes">Yes, I understand the risks and side effects</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="risks-no" />
-                    <Label htmlFor="risks-no">No, I need more information</Label>
-                  </div>
-                </RadioGroup>
+                <div>
+                  <Label className="text-base font-medium">
+                    Do you understand the risks and side effects associated with Ozempic?
+                  </Label>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Including gastrointestinal symptoms and potential thyroid tumors
+                  </p>
+                  <RadioGroup
+                    value={formData.understandsRisks}
+                    onValueChange={(value) => handleInputChange("understandsRisks", value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="risks-yes" />
+                      <Label htmlFor="risks-yes">Yes, I understand the risks and side effects</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="risks-no" />
+                      <Label htmlFor="risks-no">No, I need more information</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
               </CardContent>
             </Card>
 
             {/* Submit Button */}
             <div className="flex justify-center pt-8">
-              <Button type="submit" className="bg-primary hover:bg-blue-600 text-white px-12 py-3 text-lg">
-                Continue
+              <Button 
+                type="submit" 
+                className="bg-primary hover:bg-blue-600 text-white px-12 py-3 text-lg"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Submitting..." : "Continue"}
               </Button>
             </div>
           </form>
         </div>
       </main>
     </div>
+    </WithAuth>
   )
 }

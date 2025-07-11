@@ -12,6 +12,7 @@ import { ArrowLeft, CreditCard, Lock, Star, Bell } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import Logout from "@/components/logout/Logout"
+import WithAuth from "@/components/auth/WithAuth"
 
 export default function CheckoutPage() {
   const [formData, setFormData] = useState({
@@ -54,7 +55,8 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <WithAuth requiredRole="user" redirectTo="/auth/login">
+      <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="border-b border-gray-200 bg-white sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
@@ -412,5 +414,6 @@ export default function CheckoutPage() {
         </div>
       </main>
     </div>
+    </WithAuth>
   )
 }
