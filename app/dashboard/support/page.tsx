@@ -24,8 +24,6 @@ export default function SupportPage() {
                          <span className="lg:text-sm text-xs font-medium text-gray-600">WEIGHT LOSS CLINIC</span>
                         </div>
                     </div>
-                  
-      
                   <div className="flex items-center sm:space-x-6 space-x-3">
                     <div className="hidden md:flex items-center space-x-2">
                       <div className="flex items-center">

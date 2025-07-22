@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import Logout from "@/components/logout/Logout"
 import { getUserOrders, Order, OrdersResponse } from "@/lib/api/orderService"
 import { useToast } from "@/hooks/use-toast"
+import { useDebounce } from "@/hooks/use-debounce"
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -99,41 +100,30 @@ export default function OrdersPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [ordersData, setOrdersData] = useState<OrdersResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [tableLoading, setTableLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
+  const debouncedSearch = useDebounce(searchTerm, 400)
 
+  // Initial load (full page)
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const data = await getUserOrders()
-        setOrdersData(data)
-      } catch (err) {
-        console.error('Error fetching orders:', err)
-        setError('Failed to load orders. Please try again later.')
-        toast({
-          title: "Error",
-          description: "Failed to load orders. Please try again later.",
-          variant: "destructive",
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
+    setLoading(true)
+    getUserOrders(1, "", "all").then(data => {
+      setOrdersData(data)
+    }).finally(() => setLoading(false))
+  }, [])
 
-    fetchOrders()
-  }, [toast])
+  // Table updates (search/filter/pagination)
+  useEffect(() => {
+    if (loading) return
+    setTableLoading(true)
+    getUserOrders(currentPage, debouncedSearch, statusFilter).then(data => {
+      setOrdersData(data)
+    }).finally(() => setTableLoading(false))
+  }, [currentPage, debouncedSearch, statusFilter, loading])
 
-  const transformedOrders = ordersData?.orders.data.map(transformOrder) || []
-
-  const filteredOrders = transformedOrders.filter((order) => {
-    const matchesSearch =
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.items.some((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesStatus = statusFilter === "all" || order.status.toLowerCase() === statusFilter.toLowerCase()
-    return matchesSearch && matchesStatus
-  })
+  const orders = ordersData?.orders.data.map(transformOrder) || []
 
   const handleViewDetails = (order: ReturnType<typeof transformOrder>) => {
     setSelectedOrder(order)
@@ -266,8 +256,8 @@ export default function OrdersPage() {
         </Card>
 
         {/* Orders List */}
-        <div className="space-y-4">
-          {filteredOrders.length === 0 ? (
+        <div className="relative space-y-4">
+          {orders.length === 0 && !tableLoading ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -276,7 +266,7 @@ export default function OrdersPage() {
               </CardContent>
             </Card>
           ) : (
-            filteredOrders.map((order) => (
+            orders.map((order) => (
               <Card key={order.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -329,6 +319,11 @@ export default function OrdersPage() {
                 </CardContent>
               </Card>
             ))
+          )}
+          {tableLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            </div>
           )}
         </div>
       </div>
