@@ -87,3 +87,29 @@ export const replyToAdminSupportTicket = async (
     headers: { "Content-Type": "multipart/form-data" },
   });
 };
+
+// User support ticket functions
+export const getUserSupportTickets = async (): Promise<AdminSupportTicket[]> => {
+  const response = await apiClient.get<ApiResponse<AdminSupportTicketsResponse>>('/user/support-tickets')
+  return response.data?.data || []
+}
+
+export const getUserSupportTicketById = async (id: number): Promise<AdminSupportTicket> => {
+  const response = await apiClient.get<ApiResponse<AdminSupportTicket>>(`/user/support-tickets/${id}`)
+  return response.data
+}
+
+export const replyToUserSupportTicket = async (
+  id: number,
+  message: string,
+  attachments?: File[]
+) => {
+  const formData = new FormData();
+  formData.append("message", message);
+  if (attachments && attachments.length > 0) {
+    attachments.forEach((file) => formData.append("attachments[]", file));
+  }
+  return await apiClient.post(`/user/support-tickets/${id}/reply`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
