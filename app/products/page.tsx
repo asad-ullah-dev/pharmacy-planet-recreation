@@ -15,6 +15,7 @@ export default function ProductsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [medicalConsultation, setMedicalConsultation] = useState<boolean>(true)
+  const [currentImages, setCurrentImages] = useState<{ [productId: number]: number }>({});
 
   // Load products on component mount
   useEffect(() => {
@@ -201,72 +202,104 @@ export default function ProductsPage() {
               {filteredProducts.map((product) => {
                 const categoryStyle = getCategoryStyle(product.category)
                 const CategoryIcon = categoryStyle.icon
-                
+                const currentImage = currentImages[product.id] || 0;
+
                 return (
                   <Link href={`/products/${product.id}`} key={product.id}>
                     <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-                    <CardHeader className="pb-4">
-                      <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center mb-4 group-hover:from-gray-100 group-hover:to-gray-200 transition-colors">
-                        <div className={`w-16 h-16 ${categoryStyle.bgColor} rounded-full flex items-center justify-center`}>
-                          <CategoryIcon className={`w-8 h-8 ${categoryStyle.color}`} />
+                      <CardHeader className="pb-4">
+                        {/* Image slider or single image */}
+                        <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden relative flex items-center justify-center">
+                          {product.images?.length ? (
+                            <img
+                              src={product.images[currentImage]}
+                              alt={product.name}
+                              className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                            />
+                          ) : (
+                            <div className={`w-32 h-32 ${categoryStyle.bgColor} rounded-full flex items-center justify-center`}>
+                              <CategoryIcon className={`w-16 h-16 ${categoryStyle.color}`} />
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      <CardTitle className="text-lg text-gray-900 line-clamp-2">{product.name}</CardTitle>
-                      <div className="flex items-center space-x-2">
-                        <Badge className="bg-blue-100 text-blue-800">{product.category}</Badge>
-                        {product.available_stock > 0 ? (
-                          <Badge className="bg-green-100 text-green-800">In Stock</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-red-600">Out of Stock</Badge>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                        {product.description}
-                      </p>
-                      
-                      {/* Product Details */}
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Package className="w-4 h-4 mr-2" />
-                          <span>Stock: {product.available_stock}</span>
-                        </div>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          <span>Expires: {new Date(product.expiry_date).toLocaleDateString()}</span>
-                        </div>
-                        {product.total_sold > 0 && (
-                          <div className="flex items-center text-sm text-gray-500">
-                            <TrendingUp className="w-4 h-4 mr-2" />
-                            <span>Sold: {product.total_sold}</span>
+                        {/* Dots/Indicators for images */}
+                        {product.images?.length > 1 && (
+                          <div className="flex justify-center gap-2 mt-2">
+                            {product.images.map((_, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                className={`w-2 h-2 rounded-full transition-all duration-150 ${
+                                  currentImage === idx ? 'bg-primary scale-125' : 'bg-gray-300'
+                                }`}
+                                onClick={e => {
+                                  e.preventDefault();
+                                  setCurrentImages(prev => ({
+                                    ...prev,
+                                    [product.id]: idx
+                                  }));
+                                }}
+                                aria-label={`Show image ${idx + 1}`}
+                              />
+                            ))}
                           </div>
                         )}
-                      </div>
+                        <CardTitle className="text-lg text-gray-900 line-clamp-2">{product.name}</CardTitle>
+                        <div className="flex items-center space-x-2">
+                          <Badge className="bg-blue-100 text-blue-800">{product.category}</Badge>
+                          {product.available_stock > 0 ? (
+                            <Badge className="bg-green-100 text-green-800">In Stock</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-red-600">Out of Stock</Badge>
+                          )}
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                          {product.description}
+                        </p>
+                        
+                        {/* Product Details */}
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Package className="w-4 h-4 mr-2" />
+                            <span>Stock: {product.available_stock}</span>
+                          </div>
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            <span>Expires: {new Date(product.expiry_date).toLocaleDateString()}</span>
+                          </div>
+                          {product.total_sold > 0 && (
+                            <div className="flex items-center text-sm text-gray-500">
+                              <TrendingUp className="w-4 h-4 mr-2" />
+                              <span>Sold: {product.total_sold}</span>
+                            </div>
+                          )}
+                        </div>
 
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="text-2xl font-bold text-gray-900">{formatPrice(product.price)}</span>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-2xl font-bold text-gray-900">{formatPrice(product.price)}</span>
+                          </div>
+                          <Button  className="bg-primary hover:bg-blue-600 text-white">
+                            <ShoppingCart className="w-4 h-4 mr-2" />
+                            {product.available_stock > 0 ? "View details" : "Out of Stock"}
+                          </Button>
                         </div>
-                        <Button  className="bg-primary hover:bg-blue-600 text-white">
-                          <ShoppingCart className="w-4 h-4 mr-2" />
-                          {product.available_stock > 0 ? "View details" : "Out of Stock"}
-                        </Button>
-                      </div>
-                      
-                      <div className="mt-4 pt-4 border-t border-gray-100">
-                        <div className="flex items-center text-sm text-gray-500">
-                          <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
-                          <span className="font-medium">4.8/5</span>
-                          <span className="mx-2">•</span>
-                          <span>Verified Product</span>
+                        
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
+                            <span className="font-medium">4.8/5</span>
+                            <span className="mx-2">•</span>
+                            <span>Verified Product</span>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  </Link>
-                )
-              })}
+                      </CardContent>
+                    </Card>
+                    </Link>
+                  )
+                })}
             </div>
           ) : (
             <div className="text-center py-12">

@@ -17,6 +17,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentImage, setCurrentImage] = useState(0)
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -195,23 +196,76 @@ export default function ProductDetailPage() {
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Product Image */}
             <div className="space-y-4">
-              <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center">
-                <div className={`w-32 h-32 ${categoryStyle.bgColor} rounded-full flex items-center justify-center`}>
-                  <CategoryIcon className={`w-16 h-16 ${categoryStyle.color}`} />
-                </div>
-              </div>
-              <div className="grid grid-cols-4 gap-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
-                  >
-                    <div className={`w-8 h-8 ${categoryStyle.bgColor} rounded-full flex items-center justify-center`}>
-                      <CategoryIcon className={`w-4 h-4 ${categoryStyle.color}`} />
-                    </div>
+              {/* Main Image */}
+              <div className="aspect-square bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center overflow-hidden relative">
+                {product.images?.length ? (
+                  <>
+                    <img
+                      src={product.images[currentImage]}
+                      alt={product.name}
+                      className="w-full h-full object-contain"
+                    />
+                   
+                  </>
+                ) : (
+                  <div className={`w-32 h-32 ${categoryStyle.bgColor} rounded-full flex items-center justify-center`}>
+                    <CategoryIcon className={`w-16 h-16 ${categoryStyle.color}`} />
                   </div>
-                ))}
+                )}
               </div>
+
+              {/* Thumbnails */}
+              {product.images?.length > 1 && (
+                <div className="flex gap-2 justify-center mt-2">
+                  {product.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className={`border-2 rounded-lg overflow-hidden focus:outline-none transition-all duration-150 ${
+                        currentImage === idx ? 'border-primary ring-2 ring-primary' : 'border-gray-200'
+                      }`}
+                      style={{ width: 64, height: 64 }}
+                      onClick={() => setCurrentImage(idx)}
+                      aria-label={`Show image ${idx + 1}`}
+                    >
+                      <img
+                        src={img}
+                        alt={`${product.name} thumbnail ${idx + 1}`}
+                        className="object-cover w-full h-full"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Single image - show thumbnail */}
+              {Array.isArray(product.images) && typeof product.images.length === 'number' && product.images.length === 1 && (
+                <div className="flex justify-center mt-2">
+                  <div className="border-2 border-primary rounded-lg overflow-hidden" style={{ width: 64, height: 64 }}>
+                    <img
+                      src={product.images?.[0]}
+                      alt={product.name}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* No images - show placeholder */}
+              {(!product.images || product.images.length === 0) && (
+                <div className="grid grid-cols-4 gap-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                    >
+                      <div className={`w-8 h-8 ${categoryStyle.bgColor} rounded-full flex items-center justify-center`}>
+                        <CategoryIcon className={`w-4 h-4 ${categoryStyle.color}`} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Product Details */}

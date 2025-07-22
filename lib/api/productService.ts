@@ -15,6 +15,7 @@ export interface Product {
   status?: 'Active' | 'Inactive'
   created_at?: string
   updated_at?: string
+  images?: string[]
 }
 
 export interface ProductsResponse {
