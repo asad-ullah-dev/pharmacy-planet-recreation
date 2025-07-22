@@ -101,13 +101,13 @@ export default function SupportPage() {
                     <Mail className="w-5 h-5" />
                     <span>Newsletter Subscriptions</span>
                   </Link>
-                  <Link
+                  {/* <Link
                     href="/dashboard/delete-account"
                     className="flex items-center space-x-3 p-3 rounded-lg hover:bg-red-50 text-red-600"
                   >
                     <X className="w-5 h-5" />
                     <span>Delete Account</span>
-                  </Link>
+                  </Link> */}
                   <Link
                     href="/dashboard/support"
                     className="flex items-center space-x-3 p-3 rounded-lg bg-primary/10 text-primary"

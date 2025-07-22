@@ -14,6 +14,8 @@ import Link from "next/link"
 import Image from "next/image"
 import { pharmacyToasts, showLoadingToast, dismissToast } from "@/lib/toast-config"
 import { ConsultationFormData } from "@/lib/types"
+import { submitMedicalConsultation, MedicalConsultation } from "@/lib/api/consultationService"
+import { toast } from "sonner"
 import WithAuth from "@/components/auth/WithAuth"
 
 export default function ConsultationPage() {
@@ -45,12 +47,37 @@ export default function ConsultationPage() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  // Transform form data to API format
+  const transformFormDataToAPI = (): MedicalConsultation => {
+    return {
+      has_type2_diabetes: formData.hasType2Diabetes === "yes",
+      recent_a1c: formData.a1cLevel === "dont-know" ? undefined : formData.a1cLevel,
+      taking_diabetes_medication: formData.currentDiabetesMeds === "yes",
+      diabetes_medication_details: formData.currentDiabetesMeds === "yes" ? formData.diabetesMedsList : undefined,
+      taken_ozempic_or_glp1: formData.previousGLP1 === "yes",
+      has_family_history_mtc_men2: formData.thyroidHistory === "yes", // Mapping thyroid history to MTC/MEN2
+      has_pancreatitis: formData.pancreatitisHistory === "yes",
+      has_kidney_or_liver_disease: formData.kidneyLiverDisease === "yes",
+      has_gastrointestinal_conditions: formData.giConditions === "yes",
+      is_pregnant_or_breastfeeding: formData.pregnancyStatus === "yes",
+      has_medication_allergies: formData.allergies === "yes",
+      medication_allergies_details: formData.allergies === "yes" ? formData.allergiesList : undefined,
+      height: formData.height || undefined,
+      weight: formData.weight || undefined,
+      consumes_alcohol: formData.alcoholConsumption === "yes",
+      alcohol_consumption_details: formData.alcoholConsumption === "yes" ? formData.alcoholDetails : undefined,
+      current_medications: formData.currentMedications || undefined,
+      comfortable_with_injectable: formData.comfortableWithInjection === "yes",
+      understands_ozempic_risks: formData.understandsRisks === "yes",
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     // Basic validation
     if (!formData.hasType2Diabetes || !formData.understandsRisks) {
-      pharmacyToasts.validationError()
+      toast.error("Please answer all required questions")
       return
     }
 
@@ -58,17 +85,17 @@ export default function ConsultationPage() {
     const loadingToast = showLoadingToast('Submitting your consultation...')
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const consultationData = transformFormDataToAPI()
+      const response = await submitMedicalConsultation(consultationData)
       
       dismissToast(loadingToast)
-      pharmacyToasts.consultationSubmitted()
+      toast.success(response.message || 'Consultation submitted successfully!')
       
       // Navigate to products page
       router.push("/products")
     } catch (error) {
       dismissToast(loadingToast)
-      pharmacyToasts.consultationError()
+      toast.error("Failed to submit consultation. Please try again.")
       console.error("Consultation submission error:", error)
     } finally {
       setIsSubmitting(false)
@@ -493,7 +520,14 @@ export default function ConsultationPage() {
                 className="bg-primary hover:bg-blue-600 text-white px-12 py-3 text-lg"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Submitting..." : "Continue"}
+                {isSubmitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Submitting...
+                  </>
+                ) : (
+                  "Continue"
+                )}
               </Button>
             </div>
           </form>

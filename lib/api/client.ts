@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 const requiredEnvVars = ['NEXT_PUBLIC_API_BASE_URL']
 
 // Check if we're in development and provide a fallback
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api'
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://api.devnstage.xyz/api'
 
 if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
   console.warn('NEXT_PUBLIC_API_BASE_URL not found, using fallback:', apiBaseUrl)
