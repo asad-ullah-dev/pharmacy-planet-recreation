@@ -136,6 +136,7 @@ export default function AdminDashboard() {
           {
             title: "Conversion Rate",
             value: "",
+            // value: cards.new_users_this_month,
             change: "+0%",
             changeType: "positive",
             icon: TrendingUp,
