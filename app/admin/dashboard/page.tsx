@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,47 +11,10 @@ import { useRouter } from "next/navigation"
 import { Handle } from "vaul"
 import Logout from "@/components/logout/Logout"
 import WithAuth from "@/components/auth/WithAuth"
+import axios from "axios";
 
 export default function AdminDashboard() {
   const [timeRange, setTimeRange] = useState("7d")
-  const stats = [
-    {
-      title: "Total Revenue",
-      value: "£45,231",
-      change: "+20.1%",
-      changeType: "positive",
-      icon: DollarSign,
-      color: "text-green-600",
-      bgColor: "bg-green-100",
-    },
-    {
-      title: "Total Orders",
-      value: "1,234",
-      change: "+15.3%",
-      changeType: "positive",
-      icon: ShoppingCart,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100",
-    },
-    {
-      title: "Active Users",
-      value: "2,847",
-      change: "+8.2%",
-      changeType: "positive",
-      icon: Users,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100",
-    },
-    {
-      title: "Conversion Rate",
-      value: "3.2%",
-      change: "-2.1%",
-      changeType: "negative",
-      icon: TrendingUp,
-      color: "text-orange-600",
-      bgColor: "bg-orange-100",
-    },
-  ]
 
   const recentOrders = [
     {
@@ -87,6 +50,108 @@ export default function AdminDashboard() {
       date: "2024-01-14",
     },
   ]
+  const [stats, setStats] = useState([
+    {
+      title: "Total Revenue",
+      value: "$0",
+      change: "",
+      changeType: "positive",
+      bgColor: "bg-green-100",
+      color: "text-green-600",
+      icon: DollarSign,
+    },
+    {
+      title: "Total Orders",
+      value: "$0",
+      change: "",
+      changeType: "neutral",
+      bgColor: "bg-blue-100",
+      color: "text-blue-600",
+      icon: ShoppingCart,
+    },
+    {
+      title: "Active Users",
+      value: "$0",
+      change: "",
+      changeType: "neutral",
+      bgColor: "bg-purple-100",
+      color: "text-purple-600",
+      icon: Users,
+    },
+    {
+      title: "Conversion Rate",
+      value: "$0",
+      change: "",
+      changeType: "neutral",
+      color: "text-orange-600",
+      bgColor: "bg-orange-100",
+      icon: TrendingUp,
+    },
+  ]);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/admin/dashboard`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const cards = response.data.data.cards;
+
+        const formattedStats = [
+          {
+            title: "Total Revenue",
+            value: cards.total_revenue,
+            change: "+0%",
+            changeType: "positive",
+            icon: DollarSign,
+            bgColor: "bg-green-100",
+            color: "text-green-600",
+          },
+          {
+            title: "Total Orders",
+            value: cards.total_orders,
+            change: "-0%",
+            changeType: "negative",
+            icon: ShoppingCart,
+            bgColor: "bg-red-100",
+            color: "text-red-600",
+          },
+          {
+            title: "Active Users",
+            value: cards.active_users,
+            change: "+0%",
+            changeType: "positive",
+            icon: Users,
+            bgColor: "bg-blue-100",
+            color: "text-blue-600",
+          },
+          {
+            title: "Conversion Rate",
+            value: "",
+            change: "+0%",
+            changeType: "positive",
+            icon: TrendingUp,
+            bgColor: "bg-blue-100",
+            color: "text-blue-600",
+          },
+        ];
+
+        setStats(formattedStats);
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -136,25 +201,25 @@ export default function AdminDashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <Card key={index}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-2">{stat.value}</p>
-                    <p className={`text-sm mt-2 ${stat.changeType === "positive" ? "text-green-600" : "text-red-600"}`}>
-                      {stat.change} from last period
-                    </p>
-                  </div>
-                  <div className={`p-3 rounded-full ${stat.bgColor}`}>
-                    <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+      {stats.map((stat, index) => (
+        <Card key={index}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-2">${stat.value}</p>
+                <p className={`text-sm mt-2 ${stat.changeType === "positive" ? "text-green-600" : "text-red-600"}`}>
+                  {stat.change} from last period
+                </p>
+              </div>
+              <div className={`p-3 rounded-full ${stat.bgColor}`}>
+                <stat.icon className={`h-6 w-6 ${stat.color}`} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
