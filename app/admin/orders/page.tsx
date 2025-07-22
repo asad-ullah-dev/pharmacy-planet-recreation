@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -18,86 +18,69 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
+  Loader2,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import Logout from "@/components/logout/Logout"
-
-// Sample order data
-const sampleOrders = [
-  {
-    id: "ORD-2024-001",
-    customer: "John Doe",
-    email: "john.doe@example.com",
-    product: "Ozempic 0.5mg Pen",
-    quantity: 1,
-    amount: 299.99,
-    status: "Delivered",
-    date: "2024-01-15",
-    deliveryDate: "2024-01-18",
-    address: "123 Medical Street, London, SW1A 1AA",
-    paymentMethod: "Visa ending in 4242",
-    trackingNumber: "TRK123456789",
-  },
-  {
-    id: "ORD-2024-002",
-    customer: "Jane Smith",
-    email: "jane.smith@example.com",
-    product: "Ozempic 1mg Pen",
-    quantity: 2,
-    amount: 599.98,
-    status: "In Transit",
-    date: "2024-01-28",
-    deliveryDate: "2024-02-02",
-    address: "456 Health Avenue, Manchester, M1 1AA",
-    paymentMethod: "Mastercard ending in 8888",
-    trackingNumber: "TRK987654321",
-  },
-  {
-    id: "ORD-2024-003",
-    customer: "Mike Johnson",
-    email: "mike.johnson@example.com",
-    product: "Ozempic 0.5mg Pen",
-    quantity: 1,
-    amount: 299.99,
-    status: "Processing",
-    date: "2024-02-10",
-    deliveryDate: "2024-02-15",
-    address: "789 Wellness Road, Birmingham, B1 1AA",
-    paymentMethod: "Visa ending in 4242",
-    trackingNumber: null,
-  },
-  {
-    id: "ORD-2024-004",
-    customer: "Sarah Wilson",
-    email: "sarah.wilson@example.com",
-    product: "Ozempic 1mg Pen",
-    quantity: 3,
-    amount: 899.97,
-    status: "Cancelled",
-    date: "2024-02-08",
-    deliveryDate: null,
-    address: "321 Care Street, Edinburgh, EH1 1AA",
-    paymentMethod: "Visa ending in 4242",
-    trackingNumber: null,
-  },
-]
+import { getAdminOrders, AdminOrder, AdminOrdersPagination, updateAdminOrderStatus } from "@/lib/api/orderService"
+import { useToast } from "@/hooks/use-toast"
+import { useDebounce } from "@/hooks/use-debounce"
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState(sampleOrders)
+  const [orders, setOrders] = useState<AdminOrder[]>([])
+  const [pagination, setPagination] = useState<AdminOrdersPagination | null>(null)
+  const [totals, setTotals] = useState<{ total_orders: number; processing: number; in_transit: number; delivered: number }>({ total_orders: 0, processing: 0, in_transit: 0, delivered: 0 })
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [tableLoading, setTableLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [statusUpdating, setStatusUpdating] = useState<{ [orderId: number]: boolean }>({})
+  const { toast } = useToast()
+  const debouncedSearch = useDebounce(searchTerm, 400)
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.product.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || order.status.toLowerCase() === statusFilter.toLowerCase()
-    return matchesSearch && matchesStatus
-  })
+  // Initial load (full page loading)
+  useEffect(() => {
+    const fetchInitialOrders = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await getAdminOrders(1, "", "all")
+        setOrders(data.orders.data)
+        setPagination(data.orders)
+        setTotals(data.totals)
+      } catch (err) {
+        setError("Failed to load orders.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchInitialOrders()
+  }, [])
+
+  // Table updates (search/filter/pagination) - only after initial load
+  useEffect(() => {
+    if (loading) return // Don't double-load on first mount
+    const fetchOrders = async () => {
+      try {
+        setTableLoading(true)
+        setError(null)
+        const data = await getAdminOrders(currentPage, debouncedSearch, statusFilter)
+        setOrders(data.orders.data)
+        setPagination(data.orders)
+        setTotals(data.totals)
+      } catch (err) {
+        setError("Failed to load orders.")
+      } finally {
+        setTableLoading(false)
+      }
+    }
+    fetchOrders()
+  }, [currentPage, debouncedSearch, statusFilter, loading])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -129,13 +112,44 @@ export default function AdminOrdersPage() {
     }
   }
 
-  const handleViewOrder = (order) => {
+  const handleViewOrder = (order: AdminOrder) => {
     setSelectedOrder(order)
     setIsModalOpen(true)
   }
 
-  const updateOrderStatus = (orderId, newStatus) => {
-    setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
+  const handlePageChange = (page: number) => {
+    if (page !== currentPage && page > 0 && pagination && page <= pagination.last_page) {
+      setCurrentPage(page)
+    }
+  }
+
+  const handleStatusChange = async (order: AdminOrder, newStatus: string) => {
+    setStatusUpdating((prev) => ({ ...prev, [order.id]: true }))
+    try {
+      await updateAdminOrderStatus(order.id, newStatus)
+      setOrders((prev) => prev.map((o) => o.id === order.id ? { ...o, status: newStatus } : o))
+      toast({ title: "Order status updated", description: `Order #${order.id} status set to ${newStatus}.` })
+    } catch (err) {
+      toast({ title: "Error", description: "Failed to update order status.", variant: "destructive" })
+    } finally {
+      setStatusUpdating((prev) => ({ ...prev, [order.id]: false }))
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-600">{error}</p>
+      </div>
+    )
   }
 
   return (
@@ -182,7 +196,7 @@ export default function AdminOrdersPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{orders.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{totals.total_orders}</p>
                 </div>
                 <ShoppingCart className="h-8 w-8 text-teal-600" />
               </div>
@@ -194,7 +208,7 @@ export default function AdminOrdersPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Processing</p>
                   <p className="text-2xl font-bold text-yellow-600">
-                    {orders.filter((o) => o.status === "Processing").length}
+                    {totals.processing}
                   </p>
                 </div>
                 <Clock className="h-8 w-8 text-yellow-600" />
@@ -207,7 +221,7 @@ export default function AdminOrdersPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">In Transit</p>
                   <p className="text-2xl font-bold text-blue-600">
-                    {orders.filter((o) => o.status === "In Transit").length}
+                    {totals.in_transit}
                   </p>
                 </div>
                 <Truck className="h-8 w-8 text-blue-600" />
@@ -220,7 +234,7 @@ export default function AdminOrdersPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600">Delivered</p>
                   <p className="text-2xl font-bold text-green-600">
-                    {orders.filter((o) => o.status === "Delivered").length}
+                    {totals.delivered}
                   </p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-600" />
@@ -252,9 +266,9 @@ export default function AdminOrdersPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Orders</SelectItem>
-                    <SelectItem value="processing">Processing</SelectItem>
-                    <SelectItem value="in transit">In Transit</SelectItem>
-                    <SelectItem value="delivered">Delivered</SelectItem>
+                    <SelectItem value="Processing">Processing ({totals.processing})</SelectItem>
+                    <SelectItem value="In Transit">In Transit ({totals.in_transit})</SelectItem>
+                    <SelectItem value="delivered">Delivered ({totals.delivered})</SelectItem>
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
@@ -266,10 +280,10 @@ export default function AdminOrdersPage() {
         {/* Orders Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Orders ({filteredOrders.length})</CardTitle>
+            <CardTitle>Orders ({orders.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
@@ -283,22 +297,29 @@ export default function AdminOrdersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredOrders.map((order) => (
+                  {orders.length === 0 && !tableLoading && (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-gray-500 text-lg">
+                        No orders found
+                      </td>
+                    </tr>
+                  )}
+                  {orders.map((order) => (
                     <tr key={order.id} className="border-b hover:bg-gray-50">
                       <td className="py-3 px-4 font-medium">{order.id}</td>
                       <td className="py-3 px-4">
                         <div>
-                          <div className="font-medium text-gray-900">{order.customer}</div>
-                          <div className="text-sm text-gray-600">{order.email}</div>
+                          <div className="font-medium text-gray-900">{order.user.first_name} {order.user.last_name}</div>
+                          <div className="text-sm text-gray-600">{order.user.email}</div>
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <div>
-                          <div className="text-sm text-gray-900">{order.product}</div>
+                          <div className="text-sm text-gray-900">{order.product_name}</div>
                           <div className="text-sm text-gray-600">Qty: {order.quantity}</div>
                         </div>
                       </td>
-                      <td className="py-3 px-4 font-medium">£{order.amount.toFixed(2)}</td>
+                      <td className="py-3 px-4 font-medium">£{Number(order.total).toFixed(2)}</td>
                       <td className="py-3 px-4">
                         <Badge className={getStatusColor(order.status)}>
                           <div className="flex items-center gap-1">
@@ -307,32 +328,78 @@ export default function AdminOrdersPage() {
                           </div>
                         </Badge>
                       </td>
-                      <td className="py-3 px-4 text-gray-600">{order.date}</td>
+                      <td className="py-3 px-4 text-gray-600">{order.created_at}</td>
                       <td className="py-3 px-4">
                         <div className="flex items-center space-x-2">
                           <Button variant="outline" size="sm" onClick={() => handleViewOrder(order)}>
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Select value={order.status} onValueChange={(value) => updateOrderStatus(order.id, value)}>
-                            <SelectTrigger className="w-32 h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Processing">Processing</SelectItem>
-                              <SelectItem value="In Transit">In Transit</SelectItem>
-                              <SelectItem value="Delivered">Delivered</SelectItem>
-                              <SelectItem value="Cancelled">Cancelled</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          {order.status !== "Cancelled" && (
+                            <Select
+                              value={order.status}
+                              onValueChange={(value) => handleStatusChange(order, value)}
+                              disabled={!!statusUpdating[order.id]}
+                            >
+                              <SelectTrigger className="w-32 h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Processing">Processing</SelectItem>
+                                <SelectItem value="In Transit">In Transit</SelectItem>
+                                <SelectItem value="Delivered">Delivered</SelectItem>
+                                <SelectItem value="Cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
                         </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              {tableLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Pagination Controls */}
+        {pagination && pagination.last_page > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!pagination.prev_page_url}
+              onClick={() => handlePageChange(currentPage - 1)}
+            >
+              Previous
+            </Button>
+            {pagination.links
+              .filter(link => !isNaN(Number(link.label)))
+              .map(link => (
+                <Button
+                  key={link.label}
+                  variant={link.active ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handlePageChange(Number(link.label))}
+                  disabled={link.active}
+                >
+                  {link.label}
+                </Button>
+              ))}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!pagination.next_page_url}
+              onClick={() => handlePageChange(currentPage + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        )}
 
         {/* Order Details Modal */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -364,16 +431,16 @@ export default function AdminOrdersPage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Order Date</p>
-                        <p className="text-sm text-gray-900">{selectedOrder.date}</p>
+                        <p className="text-sm text-gray-900">{selectedOrder.created_at}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Customer</p>
-                        <p className="text-sm text-gray-900">{selectedOrder.customer}</p>
-                        <p className="text-sm text-gray-600">{selectedOrder.email}</p>
+                        <p className="text-sm text-gray-900">{selectedOrder.user.first_name} {selectedOrder.user.last_name}</p>
+                        <p className="text-sm text-gray-600">{selectedOrder.user.email}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Total Amount</p>
-                        <p className="text-lg font-semibold text-gray-900">£{selectedOrder.amount.toFixed(2)}</p>
+                        <p className="text-lg font-semibold text-gray-900">£{Number(selectedOrder.total).toFixed(2)}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -388,13 +455,13 @@ export default function AdminOrdersPage() {
                     <div className="bg-gray-50 rounded-lg p-4">
                       <div className="flex justify-between items-center">
                         <div>
-                          <h4 className="font-medium text-gray-900">{selectedOrder.product}</h4>
+                          <h4 className="font-medium text-gray-900">{selectedOrder.product_name}</h4>
                           <p className="text-sm text-gray-600">Quantity: {selectedOrder.quantity}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium text-gray-900">£{selectedOrder.amount.toFixed(2)}</p>
+                          <p className="font-medium text-gray-900">£{Number(selectedOrder.total).toFixed(2)}</p>
                           <p className="text-sm text-gray-600">
-                            £{(selectedOrder.amount / selectedOrder.quantity).toFixed(2)} each
+                            £{(Number(selectedOrder.total) / selectedOrder.quantity).toFixed(2)} each
                           </p>
                         </div>
                       </div>
@@ -410,18 +477,20 @@ export default function AdminOrdersPage() {
                   <CardContent className="space-y-4">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Delivery Address</p>
-                      <p className="text-sm text-gray-900">{selectedOrder.address}</p>
+                      <p className="text-sm text-gray-900">{selectedOrder.address.street_address}, {selectedOrder.address.city}, {selectedOrder.address.county}, {selectedOrder.address.country}, {selectedOrder.address.zip_postal_code}</p>
                     </div>
-                    {selectedOrder.deliveryDate && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Expected Delivery</p>
-                        <p className="text-sm text-gray-900">{selectedOrder.deliveryDate}</p>
-                      </div>
-                    )}
-                    {selectedOrder.trackingNumber && (
+                    {/* Optionally estimate delivery date or omit if not available */}
+                    {/* Tracking Number */}
+                    {selectedOrder.stripe_payment_intent_id && (
                       <div>
                         <p className="text-sm font-medium text-gray-600">Tracking Number</p>
-                        <p className="text-sm font-mono text-gray-900">{selectedOrder.trackingNumber}</p>
+                        <p className="text-sm font-mono text-gray-900">TRK{selectedOrder.stripe_payment_intent_id.slice(-8)}</p>
+                      </div>
+                    )}
+                    {selectedOrder.shipping && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-600">Shipping</p>
+                        <p className="text-sm text-gray-900">£{selectedOrder.shipping}</p>
                       </div>
                     )}
                   </CardContent>
@@ -435,7 +504,7 @@ export default function AdminOrdersPage() {
                   <CardContent>
                     <div>
                       <p className="text-sm font-medium text-gray-600">Payment Method</p>
-                      <p className="text-sm text-gray-900">{selectedOrder.paymentMethod}</p>
+                      <p className="text-sm text-gray-900">{selectedOrder.payment_card_last4 ? `Card ending in ${selectedOrder.payment_card_last4}` : 'Payment completed'}</p>
                     </div>
                   </CardContent>
                 </Card>
