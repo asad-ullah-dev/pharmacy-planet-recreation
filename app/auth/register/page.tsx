@@ -72,8 +72,8 @@ export default function RegisterPage() {
   ];
 
   const onSubmit = async (data: any) => {
-    console.log("Form data:", data); // Add this debug line
-    console.log("Form errors:", errors); // Add this debug line
+    console.log("Form data:", data);
+    console.log("Form errors:", errors);
 
     setIsLoading(true);
     const loadingToast = showLoadingToast("Creating your account...");
@@ -98,19 +98,13 @@ export default function RegisterPage() {
       password_confirmation: data.password,
     };
 
-    console.log("Formatted payload:", formattedPayload); // Add this debug line
+    console.log("Formatted payload:", formattedPayload);
 
     try {
       const response = await registerUser(formattedPayload);
       dismissToast(loadingToast);
       pharmacyToasts.registerSuccess();
-
-      // Redirect based on user role, just like login
-      if (response.user.role.name === "admin") {
-        router.push("/admin/dashboard");
-      } else {
-        router.push("/dashboard");
-      }
+      router.push("/auth/login");
     } catch (error) {
       dismissToast(loadingToast);
       pharmacyToasts.registerError();
