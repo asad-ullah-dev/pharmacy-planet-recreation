@@ -53,7 +53,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState([
     {
       title: "Total Revenue",
-      value: "0",
+      value: "",
       change: "",
       changeType: "positive",
       bgColor: "bg-green-100",
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
     },
     {
       title: "Total Orders",
-      value: "0",
+      value: "",
       change: "",
       changeType: "neutral",
       bgColor: "bg-blue-100",
@@ -71,7 +71,7 @@ export default function AdminDashboard() {
     },
     {
       title: "Active Users",
-      value: "0",
+      value: "",
       change: "",
       changeType: "neutral",
       bgColor: "bg-purple-100",
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
     },
     {
       title: "Conversion Rate",
-      value: "0",
+      value: "",
       change: "",
       changeType: "neutral",
       color: "text-orange-600",
