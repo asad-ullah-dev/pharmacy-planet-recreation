@@ -159,4 +159,113 @@ export const getUserOrders = async (): Promise<OrdersResponse> => {
     console.error('Error fetching user orders:', error)
     throw error
   }
+}
+
+// --- Admin Orders Types ---
+export interface AdminOrderUser {
+  id: number
+  first_name: string
+  last_name: string
+  email: string
+  // ...other fields as needed
+}
+
+export interface AdminOrderMedicine {
+  id: number
+  name: string
+  description: string
+  price: string
+  // ...other fields as needed
+}
+
+export interface AdminOrderAddress {
+  id: number
+  user_id: number
+  first_name: string
+  last_name: string
+  phone_number: string
+  street_address: string
+  city: string
+  county: string
+  country: string
+  zip_postal_code: string
+  created_at: string
+  updated_at: string
+}
+
+export interface AdminOrder {
+  id: number
+  user_id: number
+  medicine_id: number
+  user_address_id: number
+  product_name: string
+  product_price: string
+  quantity: number
+  subtotal: string
+  tax: string
+  shipping: string
+  total: string
+  billing_first_name: string
+  billing_last_name: string
+  billing_address: string
+  billing_city: string
+  billing_state: string
+  billing_zip: string
+  billing_country: string
+  payment_card_last4: string | null
+  payment_status: string
+  status: string
+  stripe_payment_intent_id: string
+  created_at: string
+  updated_at: string
+  user: AdminOrderUser
+  medicine: AdminOrderMedicine
+  address: AdminOrderAddress
+}
+
+export interface AdminOrdersPagination {
+  current_page: number
+  data: AdminOrder[]
+  first_page_url: string
+  from: number
+  last_page: number
+  last_page_url: string
+  links: { url: string | null; label: string; active: boolean }[]
+  next_page_url: string | null
+  path: string
+  per_page: number
+  prev_page_url: string | null
+  to: number
+  total: number
+}
+
+export interface AdminOrdersTotals {
+  total_orders: number
+  processing: number
+  in_transit: number
+  delivered: number
+}
+
+export interface AdminOrdersResponse {
+  orders: AdminOrdersPagination
+  totals: AdminOrdersTotals
+}
+
+// Get admin orders with pagination and totals
+export const getAdminOrders = async (
+  page = 1,
+  search: string = "",
+  status: string = ""
+): Promise<AdminOrdersResponse> => {
+  const params = new URLSearchParams()
+  params.append("page", String(page))
+  if (search) params.append("search", search)
+  if (status && status !== "all") params.append("status", status)
+  const response = await apiClient.get<ApiResponse<AdminOrdersResponse>>(`/admin/orders?${params.toString()}`)
+  return response.data
+}
+
+// Update admin order status
+export const updateAdminOrderStatus = async (orderId: number, status: string): Promise<void> => {
+  await apiClient.patch(`/admin/orders/${orderId}/status`, { status })
 } 
