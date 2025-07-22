@@ -81,35 +81,39 @@ export default function RegisterPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md sm:px-0 px-4">
-          <div className="flex justify-center">
-            <Link href="/">
-              <Image
-                src="/images/ozempo-logo.png"
-                alt="Ozempo"
-                width={200}
-                height={60}
-                className="h-12 w-auto cursor-pointer"
-              />
-            </Link>
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center">
+        <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+            <div className="mb-6">
+              <Link href="/">
+                <Image
+                  src="/images/ozempo-logo.png"
+                  alt="Ozempo"
+                  width={200}
+                  height={53}
+                  className="h-14 w-auto mx-auto cursor-pointer"
+                />
+              </Link>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create an Account</h1>
+            <p className="text-gray-600">
+              Already registered?{" "}
+              <Link href="/auth/login" className="text-primary hover:underline font-medium">
+                Login Here
+              </Link>
+            </p>
+            <p className="text-sm text-gray-500 mt-2">Create an account and make your checkout fast and easy</p>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Create your account</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{" "}
-            <Link href="/auth/login" className="font-medium text-primary hover:text-blue-500">
-              sign in to your existing account
-            </Link>
-          </p>
-        </div>
 
-        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl sm:px-0 px-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Join Ozempo</CardTitle>
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+            <Card>
+           <CardContent className="p-8">
+            <CardHeader className="p-0">
+              <CardTitle className="text-lg font-semibold text-gray-900">Personal Information</CardTitle>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
                 {/* Personal Information */}
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
@@ -137,26 +141,24 @@ export default function RegisterPage() {
                 </div>
 
                 {/* Date of Birth */}
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="dobDay">Day *</Label>
+                <div className="grid md:grid-cols-12 gap-4 mb-4">
+                   <div className="md:col-span-7">
+                    <Label htmlFor="dobDay">Date of Birth</Label>
+                     <div className="flex sm:gap-2 gap-1 mt-1">
                     <Input
                       id="dobDay"
                       {...register("dobDay")}
                       placeholder="DD"
-                      className={errors.dobDay ? 'border-red-500' : ''}
+                      className={errors.dobDay ? 'border-red-500' : 'placeholder:text-black'}
                     />
                     {errors.dobDay && (
                       <p className="text-red-500 text-sm mt-1">{errors.dobDay.message}</p>
                     )}
-                  </div>
-                  <div>
-                    <Label htmlFor="dobMonth">Month *</Label>
                     <select
                       {...register("dobMonth")}
                       className={`w-full px-3 py-2 border rounded-md ${errors.dobMonth ? 'border-red-500' : 'border-gray-300'}`}
                     >
-                      <option value="">Select Month</option>
+                      <option value="">MM</option>
                       {months.map((month, index) => (
                         <option key={month} value={String(index + 1).padStart(2, '0')}>
                           {month}
@@ -166,39 +168,34 @@ export default function RegisterPage() {
                     {errors.dobMonth && (
                       <p className="text-red-500 text-sm mt-1">{errors.dobMonth.message}</p>
                     )}
-                  </div>
-                  <div>
-                    <Label htmlFor="dobYear">Year *</Label>
                     <Input
                       id="dobYear"
                       {...register("dobYear")}
                       placeholder="YYYY"
-                      className={errors.dobYear ? 'border-red-500' : ''}
+                      className={errors.dobYear ? 'border-red-500' : 'placeholder:text-black'}
                     />
                     {errors.dobYear && (
                       <p className="text-red-500 text-sm mt-1">{errors.dobYear.message}</p>
                     )}
-                  </div>
+                    </div>
                 </div>
-
-                {/* Contact Information */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
+                <div className="md:col-span-5">
                     <Label htmlFor="phoneNumber">Phone Number *</Label>
                     <Input
                       id="phoneNumber"
                       {...register("phoneNumber")}
-                      className={errors.phoneNumber ? 'border-red-500' : ''}
+                      className={errors.phoneNumber ? 'border-red-500' : 'mt-1'}
                     />
                     {errors.phoneNumber && (
                       <p className="text-red-500 text-sm mt-1">{errors.phoneNumber.message}</p>
                     )}
-                  </div>
+                </div>
+                </div>
                   <div>
                     <Label htmlFor="gender">Gender *</Label>
                     <select
                       {...register("gender")}
-                      className={`w-full px-3 py-2 border rounded-md ${errors.gender ? 'border-red-500' : 'border-gray-300'}`}
+                      className={`w-full px-3 py-2 mt-1 border rounded-md ${errors.gender ? 'border-red-500' : 'border-gray-300'}`}
                     >
                       <option value="">Select Gender</option>
                       <option value="male">Male</option>
@@ -209,28 +206,28 @@ export default function RegisterPage() {
                       <p className="text-red-500 text-sm mt-1">{errors.gender.message}</p>
                     )}
                   </div>
-                </div>
 
                 {/* Address */}
                 <div>
                   <Label htmlFor="streetAddress">Street Address *</Label>
-                  <Input
+                  <Textarea
                     id="streetAddress"
                     {...register("streetAddress")}
-                    className={errors.streetAddress ? 'border-red-500' : ''}
+                    className={errors.streetAddress ? 'border-red-500' : 'mt-1'}
+                    rows={3}
                   />
                   {errors.streetAddress && (
                     <p className="text-red-500 text-sm mt-1">{errors.streetAddress.message}</p>
                   )}
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="county">County *</Label>
+                    <Label htmlFor="county">Country *</Label>
                     <Input
                       id="county"
                       {...register("county")}
-                      className={errors.county ? 'border-red-500' : ''}
+                      className={errors.county ? 'border-red-500' : 'mt-1'}
                     />
                     {errors.county && (
                       <p className="text-red-500 text-sm mt-1">{errors.county.message}</p>
@@ -241,7 +238,7 @@ export default function RegisterPage() {
                     <Input
                       id="city"
                       {...register("city")}
-                      className={errors.city ? 'border-red-500' : ''}
+                      className={errors.city ? 'border-red-500' : 'mt-1'}
                     />
                     {errors.city && (
                       <p className="text-red-500 text-sm mt-1">{errors.city.message}</p>
@@ -252,19 +249,17 @@ export default function RegisterPage() {
                     <Input
                       id="zipCode"
                       {...register("zipCode")}
-                      className={errors.zipCode ? 'border-red-500' : ''}
+                      className={errors.zipCode ? 'border-red-500' : 'mt-1'}
                     />
                     {errors.zipCode && (
                       <p className="text-red-500 text-sm mt-1">{errors.zipCode.message}</p>
                     )}
                   </div>
-                </div>
-
                 <div>
                   <Label htmlFor="ethnicGroup">Ethnic Group *</Label>
                   <select
                     {...register("ethnicGroup")}
-                    className={`w-full px-3 py-2 border rounded-md ${errors.ethnicGroup ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`w-full px-3 py-2 border rounded-md mt-1 ${errors.ethnicGroup ? 'border-red-500' : 'border-gray-300'}`}
                   >
                     {ethnicGroups.map((group) => (
                       <option key={group} value={group}>
@@ -276,21 +271,45 @@ export default function RegisterPage() {
                     <p className="text-red-500 text-sm mt-1">{errors.ethnicGroup.message}</p>
                   )}
                 </div>
-
-                {/* Account Information */}
+                </div>
                 <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Ethnicity Information</h3>
+                  <div>
+                <Label htmlFor="ethnicGroup">What is your ethnic group?</Label>
+                <select
+                id="ethnicGroup"
+                {...register("ethnicGroup")}
+                className={`w-full px-3 py-2 border rounded-md mt-1 ${
+                errors.ethnicGroup ? "border-red-500" : "border-gray-300"
+                }`}
+                >
+                <option value="">Select your ethnic group</option>
+                {ethnicGroups.map((group) => (
+                <option key={group} value={group}>
+                {group}
+                </option>
+                ))}
+                </select>
+                {errors.ethnicGroup && (
+                <p className="text-red-500 text-sm mt-1">{errors.ethnicGroup.message}</p>
+                )}
+                </div>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Sign-in Information</h3>
+                {/* Account Information */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
                   <Label htmlFor="email">Email Address *</Label>
                   <Input
                     id="email"
                     type="email"
                     {...register("email")}
-                    className={errors.email ? 'border-red-500' : ''}
+                    className={errors.email ? 'border-red-500' : 'mt-1'}
                   />
                   {errors.email && (
                     <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
                   )}
                 </div>
-
                 <div>
                   <Label htmlFor="password">Password *</Label>
                   <div className="relative">
@@ -298,7 +317,7 @@ export default function RegisterPage() {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       {...register("password")}
-                      className={`pr-10 ${errors.password ? 'border-red-500' : ''}`}
+                      className={`pr-10 ${errors.password ? 'border-red-500' : 'mt-1'}`}
                     />
                     <button
                       type="button"
@@ -312,18 +331,19 @@ export default function RegisterPage() {
                     <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
                   )}
                 </div>
+                </div>
 
                 {/* Terms and Newsletter */}
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-start space-x-2">
                     <Checkbox
                       id="agreeTerms"
                       {...register("agreeTerms")}
                     />
                     <Label htmlFor="agreeTerms" className="text-sm">
-                      I agree to the{" "}
+                      By ticking this box you confirm you have read, understood and accept our{" "}
                       <Link href="/terms-conditions" className="text-primary hover:underline">
-                        Terms and Conditions
+                        Terms & Conditions
                       </Link>{" "}
                       and{" "}
                       <Link href="/privacy-policy" className="text-primary hover:underline">
@@ -341,14 +361,14 @@ export default function RegisterPage() {
                       {...register("subscribeNewsletter")}
                     />
                     <Label htmlFor="subscribeNewsletter" className="text-sm">
-                      Subscribe to our newsletter for health tips and updates
+                      Keep me informed of new products and promotions.
                     </Label>
                   </div>
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full text-white"
+                  className="w-full bg-teal-500 hover:bg-teal-600 text-white py-3 text-lg"
                   disabled={isLoading}
                   style={{ backgroundColor: "#14b8a6" }}
                 >
@@ -368,7 +388,61 @@ export default function RegisterPage() {
               className="mx-auto h-16 w-auto"
             />
           </div>
-        </div>
+            </div>
+             {/* Sidebar */}
+            <div className="space-y-6">
+              {/* Trust Badges */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-center">Prescription medicines delivered to your door.</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center space-y-4">
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <span className="text-sm">Online assessment</span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                    <span className="text-sm">No hidden fees</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mt-6">
+                    <div className="bg-green-100 p-3 rounded text-center">
+                      <div className="text-xs font-medium">NHS approved</div>
+                      <div className="text-xs text-gray-600">medicines</div>
+                    </div>
+                    <div className="bg-blue-100 p-3 rounded text-center">
+                      <div className="text-xs font-medium">Registered</div>
+                      <div className="text-xs text-gray-600">Pharmacy</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center space-x-2 mt-4">
+                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                    <span className="text-sm font-medium">Trustpilot</span>
+                  </div>
+                  <div className="text-xs text-gray-600">4.4 of 5 | 2,303 reviews</div>
+                </CardContent>
+              </Card>
+
+              {/* Weight Loss Focus */}
+              <div className="text-center">
+                <Image
+                  src="/images/weight-loss-slogan.png"
+                  alt="Weight Loss Made Simple - Ozempo"
+                  width={250}
+                  height={83}
+                  className="mx-auto"
+                />
+              </div>
+            </div>
+          </div>
+          </div>
+          </div>
       </div>
     </>
   )
