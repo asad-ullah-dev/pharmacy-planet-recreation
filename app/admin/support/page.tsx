@@ -1,99 +1,141 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { MessageSquare, Search, Filter, Eye, ArrowLeft, Clock, CheckCircle, AlertTriangle, User } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
-import Logout from "@/components/logout/Logout"
-import React from "react"
-import { getAdminSupportTickets } from "@/lib/api/supportTicketService"
-import type { AdminSupportTicket } from "@/lib/api/supportTicketService"
-import { updateSupportTicketStatus } from "@/lib/api/supportTicketService";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  MessageSquare,
+  Search,
+  Filter,
+  Eye,
+  ArrowLeft,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  User,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import Logout from "@/components/logout/Logout";
+import React from "react";
+import {
+  getAdminSupportTickets,
+  getAdminSupportTicketById,
+  updateSupportTicketStatus,
+  replyToAdminSupportTicket,
+} from "@/lib/api/supportTicketService";
+import type { AdminSupportTicket, TicketReply } from "@/lib/api/supportTicketService";
 
 export default function AdminSupportPage() {
-  const [tickets, setTickets] = useState<AdminSupportTicket[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [priorityFilter, setPriorityFilter] = useState("all")
-  const [selectedTicket, setSelectedTicket] = useState<AdminSupportTicket | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  // const [replyMessage, setReplyMessage] = useState("") // Removed replyMessage state
+  const [tickets, setTickets] = useState<AdminSupportTicket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [selectedTicket, setSelectedTicket] =
+    useState<AdminSupportTicket | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [replyMessage, setReplyMessage] = useState("");
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
+  const [replyLoading, setReplyLoading] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
 
   React.useEffect(() => {
-    setLoading(true)
+    setLoading(true);
     getAdminSupportTickets()
       .then((data) => {
-        setTickets(data)
-        setLoading(false)
+        setTickets(data);
+        setLoading(false);
       })
       .catch((err) => {
-        setError("Failed to load tickets")
-        setLoading(false)
-      })
-  }, [])
+        setError("Failed to load tickets");
+        setLoading(false);
+      });
+  }, []);
 
   const filteredTickets = tickets.filter((ticket: AdminSupportTicket) => {
     const matchesSearch =
       ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(ticket.id).includes(searchTerm)
-    const matchesStatus = statusFilter === "all" || ticket.status.toLowerCase() === statusFilter.toLowerCase()
-    const matchesPriority = priorityFilter === "all" || ticket.priority.toLowerCase() === priorityFilter.toLowerCase()
-    return matchesSearch && matchesStatus && matchesPriority
-  })
+      String(ticket.id).includes(searchTerm);
+    const matchesStatus =
+      statusFilter === "all" ||
+      ticket.status.toLowerCase() === statusFilter.toLowerCase();
+    const matchesPriority =
+      priorityFilter === "all" ||
+      ticket.priority.toLowerCase() === priorityFilter.toLowerCase();
+    return matchesSearch && matchesStatus && matchesPriority;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Open":
-        return "bg-red-100 text-red-800 border-red-200"
+        return "bg-red-100 text-red-800 border-red-200";
       case "In Progress":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "Resolved":
-        return "bg-green-100 text-green-800 border-green-200"
+        return "bg-green-100 text-green-800 border-green-200";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
-  }
+  };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "High":
-        return "bg-red-100 text-red-800 border-red-200"
+        return "bg-red-100 text-red-800 border-red-200";
       case "Medium":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "Low":
-        return "bg-green-100 text-green-800 border-green-200"
+        return "bg-green-100 text-green-800 border-green-200";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
-  }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "Open":
-        return <AlertTriangle className="h-4 w-4" />
+        return <AlertTriangle className="h-4 w-4" />;
       case "In Progress":
-        return <Clock className="h-4 w-4" />
+        return <Clock className="h-4 w-4" />;
       case "Resolved":
-        return <CheckCircle className="h-4 w-4" />
+        return <CheckCircle className="h-4 w-4" />;
       default:
-        return <MessageSquare className="h-4 w-4" />
+        return <MessageSquare className="h-4 w-4" />;
     }
-  }
+  };
 
-  const handleViewTicket = (ticket: AdminSupportTicket) => {
-    setSelectedTicket(ticket)
-    setIsModalOpen(true)
-  }
+  const handleViewTicket = async (ticket: AdminSupportTicket) => {
+    setModalLoading(true);
+    setIsModalOpen(true);
+    try {
+      const ticketDetails = await getAdminSupportTicketById(ticket.id);
+      setSelectedTicket(ticketDetails);
+    } catch (err) {
+      alert("Failed to load ticket details");
+      setSelectedTicket(ticket); // Fallback to original ticket data
+    } finally {
+      setModalLoading(false);
+    }
+  };
 
   const updateTicketStatus = async (ticketId: number, newStatus: string) => {
     try {
@@ -101,9 +143,13 @@ export default function AdminSupportPage() {
       setTickets(
         tickets.map((ticket) =>
           ticket.id === ticketId
-            ? { ...ticket, status: newStatus, updated_at: new Date().toISOString() }
-            : ticket,
-        ),
+            ? {
+                ...ticket,
+                status: newStatus,
+                updated_at: new Date().toISOString(),
+              }
+            : ticket
+        )
       );
     } catch (err) {
       // Optionally show an error toast/message
@@ -111,32 +157,64 @@ export default function AdminSupportPage() {
     }
   };
 
-  // Remove handleSendReply and replyMessage state
+  const handleReply = async () => {
+    if (!selectedTicket) return;
+    setReplyLoading(true);
+    try {
+      await replyToAdminSupportTicket(
+        selectedTicket.id,
+        replyMessage,
+        replyFiles
+      );
+      // Refresh ticket details
+      const updated = await getAdminSupportTicketById(selectedTicket.id);
+      setSelectedTicket(updated);
+      setReplyMessage("");
+      setReplyFiles([]);
+    } catch (err) {
+      alert("Failed to send reply");
+    } finally {
+      setReplyLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-     <header className="bg-white shadow-sm border-b sticky top-0 z-50">
-       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center py-4">
-                      <div className="flex items-center sm:space-x-4 space-x-2">
-                        <Link href="/admin/dashboard">
-                          <Button variant="ghost" size="sm" className="sm:text-sm text-xs sm:pr-3 pl-0 pr-1.5 sm:gap-2 gap-1">
-                            <ArrowLeft className="sm:h-4 h-2 sm:w-4 w-2 sm:mr-2" />
-                            Back to Dashboard
-                          </Button>
-                        </Link>
-                        <div className="h-6 w-px bg-gray-300 sm:block hidden" />
-                        <Image src="/images/ozempo-logo.png" alt="Ozempo Admin" width={120} height={40} className="h-8 sm:w-40 w-20" />
-                        <Badge className="text-white text-xs sm:px-2 px-1 py-1" style={{ backgroundColor: "#14b8a6" }}>
-                           ADMIN PANEL
-                        </Badge>
-                      </div>
-                       <div>
-                          <Logout />
-                        </div>
-                    </div>
-                  </div>
+      <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center sm:space-x-4 space-x-2">
+              <Link href="/admin/dashboard">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="sm:text-sm text-xs sm:pr-3 pl-0 pr-1.5 sm:gap-2 gap-1"
+                >
+                  <ArrowLeft className="sm:h-4 h-2 sm:w-4 w-2 sm:mr-2" />
+                  Back to Dashboard
+                </Button>
+              </Link>
+              <div className="h-6 w-px bg-gray-300 sm:block hidden" />
+              <Image
+                src="/images/ozempo-logo.png"
+                alt="Ozempo Admin"
+                width={120}
+                height={40}
+                className="h-8 sm:w-40 w-20"
+              />
+              <Badge
+                className="text-white text-xs sm:px-2 px-1 py-1"
+                style={{ backgroundColor: "#14b8a6" }}
+              >
+                ADMIN PANEL
+              </Badge>
+            </div>
+            <div>
+              <Logout />
+            </div>
+          </div>
+        </div>
       </header>
 
       {/* Main Content */}
@@ -147,7 +225,9 @@ export default function AdminSupportPage() {
             <MessageSquare className="h-8 w-8 text-teal-600" />
             Support Management
           </h1>
-          <p className="text-gray-600 mt-2">Manage customer support tickets and inquiries</p>
+          <p className="text-gray-600 mt-2">
+            Manage customer support tickets and inquiries
+          </p>
         </div>
 
         {/* Stats Cards */}
@@ -156,8 +236,12 @@ export default function AdminSupportPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Tickets</p>
-                  <p className="text-2xl font-bold text-gray-900">{tickets.length}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Total Tickets
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {tickets.length}
+                  </p>
                 </div>
                 <MessageSquare className="h-8 w-8 text-teal-600" />
               </div>
@@ -167,8 +251,12 @@ export default function AdminSupportPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Open Tickets</p>
-                  <p className="text-2xl font-bold text-red-600">{tickets.filter((t) => t.status === "Open").length}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    Open Tickets
+                  </p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {tickets.filter((t) => t.status === "Open").length}
+                  </p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-red-600" />
               </div>
@@ -178,7 +266,9 @@ export default function AdminSupportPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">In Progress</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    In Progress
+                  </p>
                   <p className="text-2xl font-bold text-yellow-600">
                     {tickets.filter((t) => t.status === "In Progress").length}
                   </p>
@@ -232,7 +322,10 @@ export default function AdminSupportPage() {
                 </Select>
               </div>
               <div className="sm:w-40">
-                <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <Select
+                  value={priorityFilter}
+                  onValueChange={setPriorityFilter}
+                >
                   <SelectTrigger>
                     <Filter className="h-4 w-4 mr-2" />
                     <SelectValue placeholder="Priority" />
@@ -256,7 +349,9 @@ export default function AdminSupportPage() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="py-8 text-center text-gray-500">Loading tickets...</div>
+              <div className="py-8 text-center text-gray-500">
+                Loading tickets...
+              </div>
             ) : error ? (
               <div className="py-8 text-center text-red-500">{error}</div>
             ) : (
@@ -264,14 +359,30 @@ export default function AdminSupportPage() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Ticket ID</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Subject</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Category</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Priority</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Attachments</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Created</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">
+                        Ticket ID
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">
+                        Subject
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">
+                        Category
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">
+                        Priority
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">
+                        Status
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">
+                        Attachments
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">
+                        Created
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -281,7 +392,9 @@ export default function AdminSupportPage() {
                         <td className="py-3 px-4">{ticket.subject}</td>
                         <td className="py-3 px-4">{ticket.category}</td>
                         <td className="py-3 px-4">
-                          <Badge className={getPriorityColor(ticket.priority)}>{ticket.priority}</Badge>
+                          <Badge className={getPriorityColor(ticket.priority)}>
+                            {ticket.priority}
+                          </Badge>
                         </td>
                         <td className="py-3 px-4">
                           <Badge className={getStatusColor(ticket.status)}>
@@ -292,32 +405,52 @@ export default function AdminSupportPage() {
                           </Badge>
                         </td>
                         <td className="py-3 px-4">
-                          {ticket.attachments && ticket.attachments.length > 0 ? (
+                          {ticket.attachments &&
+                          ticket.attachments.length > 0 ? (
                             ticket.attachments.map((url, idx) => (
-                              <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
-                                <img src={url} alt="attachment" className="h-8 w-8 inline-block mr-1 rounded border" />
+                              <a
+                                key={idx}
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <img
+                                  src={url}
+                                  alt="attachment"
+                                  className="h-8 w-8 inline-block mr-1 rounded border"
+                                />
                               </a>
                             ))
                           ) : (
-                            <span className="text-xs text-gray-400">No Attachments</span>
+                            <span className="text-xs text-gray-400">
+                              No Attachments
+                            </span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-gray-600">{new Date(ticket.created_at).toLocaleString()}</td>
+                        <td className="py-3 px-4 text-gray-600">
+                          {new Date(ticket.created_at).toLocaleString()}
+                        </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center space-x-2">
-                            <Button variant="outline" size="sm" onClick={() => handleViewTicket(ticket)}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewTicket(ticket)}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Select value={ticket.status} onValueChange={(value) => updateTicketStatus(ticket.id, value)}>
-                              <SelectTrigger className="w-32 h-8">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Open">Open</SelectItem>
-                                <SelectItem value="In Progress">In Progress</SelectItem>
-                                <SelectItem value="Resolved">Resolved</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            {ticket.status !== "Resolved" && (
+                              <Select value={ticket.status} onValueChange={(value) => updateTicketStatus(ticket.id, value)}>
+                                <SelectTrigger className="w-32 h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Open">Open</SelectItem>
+                                  <SelectItem value="In Progress">In Progress</SelectItem>
+                                  <SelectItem value="Resolved">Resolved</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -339,7 +472,9 @@ export default function AdminSupportPage() {
               </DialogTitle>
             </DialogHeader>
 
-            {selectedTicket && (
+            {modalLoading ? (
+              <div className="py-12 text-center text-gray-500">Loading ticket details...</div>
+            ) : selectedTicket && (
               <div className="space-y-6">
                 {/* Ticket Info */}
                 <Card>
@@ -361,6 +496,10 @@ export default function AdminSupportPage() {
                         <p className="text-sm text-gray-900">{new Date(selectedTicket.created_at).toLocaleString()}</p>
                       </div>
                       <div>
+                        <p className="text-sm font-medium text-gray-600">Updated</p>
+                        <p className="text-sm text-gray-900">{new Date(selectedTicket.updated_at).toLocaleString()}</p>
+                      </div>
+                      <div>
                         <p className="text-sm font-medium text-gray-600">Priority</p>
                         <Badge className={getPriorityColor(selectedTicket.priority)}>{selectedTicket.priority}</Badge>
                       </div>
@@ -373,40 +512,131 @@ export default function AdminSupportPage() {
                           </div>
                         </Badge>
                       </div>
+                      <div className="col-span-2">
+                        <p className="text-sm font-medium text-gray-600">Message</p>
+                        <p className="text-sm text-gray-900">{selectedTicket.message}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-sm font-medium text-gray-600">Attachments</p>
+                        {selectedTicket.attachments && selectedTicket.attachments.length > 0 ? (
+                          selectedTicket.attachments.map((url, idx) => (
+                            <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
+                              <img src={url} alt="attachment" className="h-12 w-12 inline-block mr-2 rounded border" />
+                            </a>
+                          ))
+                        ) : (
+                          <span className="text-xs text-gray-400">No Attachments</span>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Conversation */}
+                {/* Conversation/Replies */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Conversation</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4 max-h-96 overflow-y-auto">
-                      {/* The original code had a conversation section here, but the API doesn't return messages.
-                          This section is removed as per the edit hint. */}
+                      {/* Original Message */}
+                      <div className="p-4 rounded-lg bg-gray-50 border-l-4 border-gray-300">
+                        <div className="flex items-center gap-2 mb-2">
+                          <User className="h-4 w-4" />
+                          <span className="font-medium text-sm">User #{selectedTicket.user_id}</span>
+                          <span className="text-xs text-gray-500">{new Date(selectedTicket.created_at).toLocaleString()}</span>
+                        </div>
+                        <p className="text-sm text-gray-900">{selectedTicket.message}</p>
+                        {selectedTicket.attachments && selectedTicket.attachments.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {selectedTicket.attachments.map((url, idx) => (
+                              <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
+                                <img src={url} alt="attachment" className="h-8 w-8 inline-block rounded border" />
+                              </a>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Replies */}
+                      {selectedTicket.replies && selectedTicket.replies.length > 0 ? (
+                        selectedTicket.replies.map((reply: TicketReply) => (
+                          <div key={reply.id} className="p-4 rounded-lg bg-teal-50 border-l-4 border-teal-500">
+                            <div className="flex items-center gap-2 mb-2">
+                              <User className="h-4 w-4" />
+                              <span className="font-medium text-sm">Admin</span>
+                              <span className="text-xs text-gray-500">{new Date(reply.created_at).toLocaleString()}</span>
+                            </div>
+                            <p className="text-sm text-gray-900">{reply.message}</p>
+                            {reply.attachments && reply.attachments.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {reply.attachments.map((url: string, idx: number) => (
+                                  <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
+                                    <img src={url} alt="attachment" className="h-8 w-8 inline-block rounded border" />
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-gray-400 text-sm">No replies yet.</div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Reply Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Send Reply</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* The original code had a reply section here, but the API doesn't return messages.
-                          This section is removed as per the edit hint. */}
-                    </div>
-                  </CardContent>
-                </Card>
+                {/* Reply Form - Only show if status is not Resolved */}
+                {selectedTicket.status === "Resolved" ? (
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="text-center text-gray-500">
+                        <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                        <p className="text-lg font-medium">Ticket Resolved</p>
+                        <p className="text-sm">This ticket has been marked as resolved. No further replies are needed.</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Send Reply</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <Textarea
+                          value={replyMessage}
+                          onChange={(e) => setReplyMessage(e.target.value)}
+                          placeholder="Type your reply..."
+                          rows={4}
+                        />
+                        <input
+                          type="file"
+                          multiple
+                          onChange={(e) => setReplyFiles(Array.from(e.target.files || []))}
+                        />
+                        <div className="flex justify-end space-x-2">
+                          <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                            Close
+                          </Button>
+                          <Button
+                            className="text-white"
+                            style={{ backgroundColor: "#14b8a6" }}
+                            onClick={handleReply}
+                            disabled={replyLoading || !replyMessage}
+                          >
+                            {replyLoading ? "Sending..." : "Send Reply"}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             )}
           </DialogContent>
         </Dialog>
       </div>
     </div>
-  )
+  );
 }
