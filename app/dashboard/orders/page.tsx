@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowLeft, Package, Calendar, CreditCard, Eye, Search, Filter, MapPin, Truck, CheckCircle } from "lucide-react"
+import { ArrowLeft, Package, Calendar, CreditCard, Eye, Search, Filter, MapPin, Truck, CheckCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,170 +11,123 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import Logout from "@/components/logout/Logout"
-
-// Sample order data with more details
-const sampleOrders = [
-  {
-    id: "ORD-2024-001",
-    date: "2024-01-15",
-    status: "Delivered",
-    total: 299.99,
-    items: [
-      {
-        name: "Ozempic 0.5mg Pen",
-        quantity: 1,
-        price: 299.99,
-        description: "Pre-filled injection pen for weight management",
-      },
-    ],
-    deliveryDate: "2024-01-18",
-    shippingAddress: {
-      name: "John Doe",
-      line1: "123 Medical Street",
-      line2: "Apt 4B",
-      city: "London",
-      postcode: "SW1A 1AA",
-      country: "United Kingdom",
-    },
-    paymentMethod: "Visa ending in 4242",
-    trackingNumber: "TRK123456789",
-    timeline: [
-      {
-        date: "2024-01-15",
-        status: "Order Placed",
-        description: "Your order has been received and is being processed",
-      },
-      { date: "2024-01-16", status: "Payment Confirmed", description: "Payment has been successfully processed" },
-      { date: "2024-01-17", status: "Shipped", description: "Your order has been dispatched from our pharmacy" },
-      { date: "2024-01-18", status: "Delivered", description: "Package delivered successfully" },
-    ],
-  },
-  {
-    id: "ORD-2024-002",
-    date: "2024-01-28",
-    status: "In Transit",
-    total: 599.98,
-    items: [
-      {
-        name: "Ozempic 1mg Pen",
-        quantity: 2,
-        price: 299.99,
-        description: "Pre-filled injection pen for weight management",
-      },
-    ],
-    deliveryDate: "2024-02-02",
-    shippingAddress: {
-      name: "John Doe",
-      line1: "123 Medical Street",
-      line2: "Apt 4B",
-      city: "London",
-      postcode: "SW1A 1AA",
-      country: "United Kingdom",
-    },
-    paymentMethod: "Mastercard ending in 8888",
-    trackingNumber: "TRK987654321",
-    timeline: [
-      {
-        date: "2024-01-28",
-        status: "Order Placed",
-        description: "Your order has been received and is being processed",
-      },
-      { date: "2024-01-29", status: "Payment Confirmed", description: "Payment has been successfully processed" },
-      { date: "2024-01-30", status: "Shipped", description: "Your order has been dispatched from our pharmacy" },
-    ],
-  },
-  {
-    id: "ORD-2024-003",
-    date: "2024-02-10",
-    status: "Processing",
-    total: 299.99,
-    items: [
-      {
-        name: "Ozempic 0.5mg Pen",
-        quantity: 1,
-        price: 299.99,
-        description: "Pre-filled injection pen for weight management",
-      },
-    ],
-    deliveryDate: "2024-02-15",
-    shippingAddress: {
-      name: "John Doe",
-      line1: "123 Medical Street",
-      line2: "Apt 4B",
-      city: "London",
-      postcode: "SW1A 1AA",
-      country: "United Kingdom",
-    },
-    paymentMethod: "Visa ending in 4242",
-    trackingNumber: null,
-    timeline: [
-      {
-        date: "2024-02-10",
-        status: "Order Placed",
-        description: "Your order has been received and is being processed",
-      },
-      { date: "2024-02-11", status: "Payment Confirmed", description: "Payment has been successfully processed" },
-    ],
-  },
-  {
-    id: "ORD-2023-045",
-    date: "2023-12-20",
-    status: "Delivered",
-    total: 899.97,
-    items: [
-      {
-        name: "Ozempic 1mg Pen",
-        quantity: 3,
-        price: 299.99,
-        description: "Pre-filled injection pen for weight management",
-      },
-    ],
-    deliveryDate: "2023-12-23",
-    shippingAddress: {
-      name: "John Doe",
-      line1: "123 Medical Street",
-      line2: "Apt 4B",
-      city: "London",
-      postcode: "SW1A 1AA",
-      country: "United Kingdom",
-    },
-    paymentMethod: "Visa ending in 4242",
-    trackingNumber: "TRK555666777",
-    timeline: [
-      {
-        date: "2023-12-20",
-        status: "Order Placed",
-        description: "Your order has been received and is being processed",
-      },
-      { date: "2023-12-21", status: "Payment Confirmed", description: "Payment has been successfully processed" },
-      { date: "2023-12-22", status: "Shipped", description: "Your order has been dispatched from our pharmacy" },
-      { date: "2023-12-23", status: "Delivered", description: "Package delivered successfully" },
-    ],
-  },
-]
+import { getUserOrders, Order, OrdersResponse } from "@/lib/api/orderService"
+import { useToast } from "@/hooks/use-toast"
 
 const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Delivered":
+  switch (status.toLowerCase()) {
+    case "delivered":
       return "bg-green-100 text-green-800 border-green-200"
-    case "In Transit":
+    case "in transit":
+    case "shipped":
       return "bg-blue-100 text-blue-800 border-blue-200"
-    case "Processing":
+    case "processing":
       return "bg-yellow-100 text-yellow-800 border-yellow-200"
-    case "Cancelled":
+    case "cancelled":
       return "bg-red-100 text-red-800 border-red-200"
     default:
       return "bg-gray-100 text-gray-800 border-gray-200"
   }
 }
 
+// Transform API order to display format
+const transformOrder = (order: Order) => {
+  const orderDate = new Date(order.created_at)
+  const deliveryDate = new Date(order.created_at)
+  deliveryDate.setDate(deliveryDate.getDate() + 3) // Add 3 days for estimated delivery
+
+  return {
+    id: `ORD-${order.id}`,
+    date: order.created_at,
+    status: order.status,
+    total: parseFloat(order.total),
+    items: [
+      {
+        name: order.product_name,
+        quantity: order.quantity,
+        price: parseFloat(order.product_price),
+        description: order.medicine.short_description || order.medicine.description,
+      },
+    ],
+    deliveryDate: deliveryDate.toISOString().split('T')[0],
+    shippingAddress: {
+      name: `${order.address.first_name} ${order.address.last_name}`,
+      line1: order.address.street_address,
+      line2: "",
+      city: order.address.city,
+      postcode: order.address.zip_postal_code,
+      country: order.address.country,
+    },
+    paymentMethod: order.payment_card_last4 
+      ? `Card ending in ${order.payment_card_last4}`
+      : "Payment completed",
+    trackingNumber: order.stripe_payment_intent_id ? `TRK${order.stripe_payment_intent_id.slice(-8)}` : null,
+    timeline: [
+      {
+        date: order.created_at,
+        status: "Order Placed",
+        description: "Your order has been received and is being processed",
+      },
+      {
+        date: new Date(order.created_at).toISOString().split('T')[0],
+        status: "Payment Confirmed",
+        description: "Payment has been successfully processed",
+      },
+      ...(order.status.toLowerCase() === "processing" ? [] : [
+        {
+          date: new Date(order.created_at).toISOString().split('T')[0],
+          status: "Shipped",
+          description: "Your order has been dispatched from our pharmacy",
+        },
+      ]),
+      ...(order.status.toLowerCase() === "delivered" ? [
+        {
+          date: deliveryDate.toISOString().split('T')[0],
+          status: "Delivered",
+          description: "Package delivered successfully",
+        },
+      ] : []),
+    ],
+    originalOrder: order,
+  }
+}
+
 export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [selectedOrder, setSelectedOrder] = useState<(typeof sampleOrders)[0] | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<ReturnType<typeof transformOrder> | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [ordersData, setOrdersData] = useState<OrdersResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
 
-  const filteredOrders = sampleOrders.filter((order) => {
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await getUserOrders()
+        setOrdersData(data)
+      } catch (err) {
+        console.error('Error fetching orders:', err)
+        setError('Failed to load orders. Please try again later.')
+        toast({
+          title: "Error",
+          description: "Failed to load orders. Please try again later.",
+          variant: "destructive",
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchOrders()
+  }, [toast])
+
+  const transformedOrders = ordersData?.orders.data.map(transformOrder) || []
+
+  const filteredOrders = transformedOrders.filter((order) => {
     const matchesSearch =
       order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.items.some((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -182,9 +135,33 @@ export default function OrdersPage() {
     return matchesSearch && matchesStatus
   })
 
-  const handleViewDetails = (order: (typeof sampleOrders)[0]) => {
+  const handleViewDetails = (order: ReturnType<typeof transformOrder>) => {
     setSelectedOrder(order)
     setIsModalOpen(true)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading your orders...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center">
+          <Package className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Orders</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -224,39 +201,35 @@ export default function OrdersPage() {
           <p className="text-gray-600">Track and manage your medication orders</p>
         </div>
 
-        {/* Summary Stats - Moved above filters */}
-        <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">{sampleOrders.length}</div>
-              <div className="text-sm text-gray-600">Total Orders</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {sampleOrders.filter((o) => o.status === "Delivered").length}
-              </div>
-              <div className="text-sm text-gray-600">Delivered</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-yellow-600">
-                {sampleOrders.filter((o) => o.status === "Processing" || o.status === "In Transit").length}
-              </div>
-              <div className="text-sm text-gray-600">In Progress</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900">
-                £{sampleOrders.reduce((sum, order) => sum + order.total, 0).toFixed(2)}
-              </div>
-              <div className="text-sm text-gray-600">Total Spent</div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Summary Stats */}
+        {ordersData && (
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600">{ordersData.totals.total_orders}</div>
+                <div className="text-sm text-gray-600">Total Orders</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">{ordersData.totals.delivered}</div>
+                <div className="text-sm text-gray-600">Delivered</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-yellow-600">{ordersData.totals.in_progress}</div>
+                <div className="text-sm text-gray-600">In Progress</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-gray-900">£{ordersData.totals.total_spent.toFixed(2)}</div>
+                <div className="text-sm text-gray-600">Total Spent</div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Filters */}
         <Card className="mb-6">
@@ -400,6 +373,12 @@ export default function OrdersPage() {
                     <span className="font-medium">Payment Method:</span>
                     <span>{selectedOrder.paymentMethod}</span>
                   </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Payment Status:</span>
+                    <Badge className={selectedOrder.originalOrder.payment_status === "paid" ? "bg-green-100 text-green-800 border-green-200" : "bg-yellow-100 text-yellow-800 border-yellow-200"}>
+                      {selectedOrder.originalOrder.payment_status}
+                    </Badge>
+                  </div>
                 </CardContent>
               </Card>
 
@@ -423,8 +402,20 @@ export default function OrdersPage() {
                         </div>
                       </div>
                     ))}
-                    <div className="border-t pt-4">
-                      <div className="flex justify-between items-center text-lg font-semibold">
+                    <div className="border-t pt-4 space-y-2">
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Subtotal:</span>
+                        <span>£{selectedOrder.originalOrder.subtotal}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Tax:</span>
+                        <span>£{selectedOrder.originalOrder.tax}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span>Shipping:</span>
+                        <span>£{selectedOrder.originalOrder.shipping}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-lg font-semibold border-t pt-2">
                         <span>Total:</span>
                         <span>£{selectedOrder.total.toFixed(2)}</span>
                       </div>

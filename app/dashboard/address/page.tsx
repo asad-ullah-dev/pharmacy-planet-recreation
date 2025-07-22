@@ -168,13 +168,13 @@ export default function AddressDetailsPage() {
                     <Mail className="w-5 h-5" />
                     <span>Newsletter Subscriptions</span>
                   </Link>
-                  <Link
+                  {/* <Link
                     href="/dashboard/delete-account"
                     className="flex items-center space-x-3 p-3 rounded-lg hover:bg-red-50 text-red-600"
                   >
                     <X className="w-5 h-5" />
                     <span>Delete Account</span>
-                  </Link>
+                  </Link> */}
                   <Link
                     href="/dashboard/support"
                     className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 text-gray-700"
@@ -209,7 +209,7 @@ export default function AddressDetailsPage() {
                             type="text"
                             id="first_name"
                             name="first_name"
-                            value={formData.first_name}
+                            value={formData?.first_name}
                             onChange={handleInputChange}
                             required
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -223,7 +223,7 @@ export default function AddressDetailsPage() {
                             type="text"
                             id="last_name"
                             name="last_name"
-                            value={formData.last_name}
+                            value={formData?.last_name}
                             onChange={handleInputChange}
                             required
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -238,7 +238,7 @@ export default function AddressDetailsPage() {
                           type="tel"
                           id="phone_number"
                           name="phone_number"
-                          value={formData.phone_number}
+                          value={formData?.phone_number}
                           onChange={handleInputChange}
                           required
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -259,7 +259,7 @@ export default function AddressDetailsPage() {
                               type="text"
                               id="street_address"
                               name="street_address"
-                              value={formData.street_address}
+                              value={formData?.street_address}
                               onChange={handleInputChange}
                               required
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -273,7 +273,7 @@ export default function AddressDetailsPage() {
                               type="text"
                               id="city"
                               name="city"
-                              value={formData.city}
+                              value={formData?.city}
                               onChange={handleInputChange}
                               required
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -290,7 +290,7 @@ export default function AddressDetailsPage() {
                               type="text"
                               id="county"
                               name="county"
-                              value={formData.county}
+                              value={formData?.county}
                               onChange={handleInputChange}
                               required
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -304,7 +304,7 @@ export default function AddressDetailsPage() {
                               type="text"
                               id="zip_postal_code"
                               name="zip_postal_code"
-                              value={formData.zip_postal_code}
+                              value={formData?.zip_postal_code}
                               onChange={handleInputChange}
                               required
                               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -319,7 +319,7 @@ export default function AddressDetailsPage() {
                           <select
                             id="country"
                             name="country"
-                            value={formData.country}
+                            value={formData?.country}
                             onChange={handleInputChange}
                             required
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
