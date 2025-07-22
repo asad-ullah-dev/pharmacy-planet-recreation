@@ -175,8 +175,33 @@ export default function AdminUsersPage() {
     }
   };
 
+  const isEditFormChanged = () => {
+    if (!selectedUser) return false;
+    // Compare each field in editForm with selectedUser
+    return (
+      editForm.first_name !== selectedUser.first_name ||
+      editForm.last_name !== selectedUser.last_name ||
+      editForm.date_of_birth !== selectedUser.date_of_birth ||
+      editForm.phone_number !== selectedUser.phone_number ||
+      editForm.gender !== selectedUser.gender ||
+      editForm.street_address !== selectedUser.street_address ||
+      editForm.county !== selectedUser.county ||
+      editForm.city !== selectedUser.city ||
+      editForm.zip_postal_code !== selectedUser.zip_postal_code ||
+      editForm.ethnicity !== selectedUser.ethnicity ||
+      editForm.email !== selectedUser.email ||
+      editForm.role_id !== selectedUser.role_id ||
+      editForm.status !== selectedUser.status
+    );
+  };
+
   const handleSaveEdit = async () => {
     if (!selectedUser) return;
+    if (!isEditFormChanged()) {
+      toast.info("No changes detected.");
+      setIsEditModalOpen(false);
+      return;
+    }
     try {
       setEditLoading(true);
       await updateUser(selectedUser.id, editForm);
