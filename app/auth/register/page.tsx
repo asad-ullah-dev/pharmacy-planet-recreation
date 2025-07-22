@@ -35,11 +35,6 @@ export default function RegisterPage() {
     resolver: yupResolver(registerSchema),
   });
 
-  // Add this debug handler
-  const onError = (errors: any) => {
-    console.log("Form validation errors:", errors);
-  };
-
   const months = [
     "January",
     "February",
@@ -169,7 +164,7 @@ export default function RegisterPage() {
                       </CardTitle>
                     </CardHeader>
                     <form
-                      onSubmit={handleSubmit(onSubmit, onError)}
+                      onSubmit={handleSubmit(onSubmit)}
                       className="space-y-6 mt-4"
                     >
                       {/* Personal Information */}
