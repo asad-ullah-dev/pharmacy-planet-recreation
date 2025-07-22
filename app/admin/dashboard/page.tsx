@@ -53,7 +53,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState([
     {
       title: "Total Revenue",
-      value: "$0",
+      value: "0",
       change: "",
       changeType: "positive",
       bgColor: "bg-green-100",
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
     },
     {
       title: "Total Orders",
-      value: "$0",
+      value: "0",
       change: "",
       changeType: "neutral",
       bgColor: "bg-blue-100",
@@ -71,7 +71,7 @@ export default function AdminDashboard() {
     },
     {
       title: "Active Users",
-      value: "$0",
+      value: "0",
       change: "",
       changeType: "neutral",
       bgColor: "bg-purple-100",
@@ -80,7 +80,7 @@ export default function AdminDashboard() {
     },
     {
       title: "Conversion Rate",
-      value: "$0",
+      value: "0",
       change: "",
       changeType: "neutral",
       color: "text-orange-600",
@@ -200,14 +200,14 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       {stats.map((stat, index) => (
         <Card key={index}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-2">${stat.value}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-2">${Number(stat.value || 0).toFixed(2)}</p>
                 <p className={`text-sm mt-2 ${stat.changeType === "positive" ? "text-green-600" : "text-red-600"}`}>
                   {stat.change} from last period
                 </p>
