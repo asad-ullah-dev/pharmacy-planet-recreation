@@ -151,14 +151,17 @@ export const createOrder = async (orderData: {
 }
 
 // Get user orders with pagination and totals
-export const getUserOrders = async (): Promise<OrdersResponse> => {
-  try {
-    const response = await apiClient.get<ApiResponse<OrdersResponse>>('/frontend/orders')
-    return response.data
-  } catch (error) {
-    console.error('Error fetching user orders:', error)
-    throw error
-  }
+export const getUserOrders = async (
+  page = 1,
+  search: string = "",
+  status: string = ""
+): Promise<OrdersResponse> => {
+  const params = new URLSearchParams()
+  params.append("page", String(page))
+  if (search) params.append("search", search)
+  if (status && status !== "all") params.append("status", status)
+  const response = await apiClient.get<ApiResponse<OrdersResponse>>(`/frontend/orders?${params.toString()}`)
+  return response.data
 }
 
 // --- Admin Orders Types ---

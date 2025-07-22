@@ -12,94 +12,40 @@ import { MessageSquare, Search, Filter, Eye, ArrowLeft, Clock, CheckCircle, Aler
 import Link from "next/link"
 import Image from "next/image"
 import Logout from "@/components/logout/Logout"
-
-// Sample support ticket data
-const sampleTickets = [
-  {
-    id: "TKT-001",
-    subject: "Order delivery issue",
-    customer: "John Doe",
-    email: "john.doe@example.com",
-    priority: "High",
-    status: "Open",
-    category: "Delivery",
-    created: "2024-01-20",
-    lastUpdate: "2024-01-20",
-    messages: [
-      {
-        from: "John Doe",
-        message: "My order ORD-2024-001 was supposed to be delivered yesterday but I haven't received it yet.",
-        timestamp: "2024-01-20 10:30",
-      },
-    ],
-  },
-  {
-    id: "TKT-002",
-    subject: "Product information inquiry",
-    customer: "Jane Smith",
-    email: "jane.smith@example.com",
-    priority: "Medium",
-    status: "In Progress",
-    category: "Product",
-    created: "2024-01-19",
-    lastUpdate: "2024-01-20",
-    messages: [
-      {
-        from: "Jane Smith",
-        message: "I need more information about the dosage instructions for Ozempic 1mg.",
-        timestamp: "2024-01-19 14:15",
-      },
-      {
-        from: "Support Team",
-        message: "Thank you for your inquiry. I'll connect you with our medical team for detailed dosage information.",
-        timestamp: "2024-01-20 09:00",
-      },
-    ],
-  },
-  {
-    id: "TKT-003",
-    subject: "Account access problem",
-    customer: "Mike Johnson",
-    email: "mike.johnson@example.com",
-    priority: "Low",
-    status: "Resolved",
-    category: "Account",
-    created: "2024-01-18",
-    lastUpdate: "2024-01-19",
-    messages: [
-      {
-        from: "Mike Johnson",
-        message: "I can't log into my account. The password reset isn't working.",
-        timestamp: "2024-01-18 16:45",
-      },
-      {
-        from: "Support Team",
-        message: "I've reset your password manually. Please check your email for the new temporary password.",
-        timestamp: "2024-01-19 10:00",
-      },
-      {
-        from: "Mike Johnson",
-        message: "Thank you! I can access my account now.",
-        timestamp: "2024-01-19 10:30",
-      },
-    ],
-  },
-]
+import React from "react"
+import { getAdminSupportTickets } from "@/lib/api/supportTicketService"
+import type { AdminSupportTicket } from "@/lib/api/supportTicketService"
+import { updateSupportTicketStatus } from "@/lib/api/supportTicketService";
 
 export default function AdminSupportPage() {
-  const [tickets, setTickets] = useState(sampleTickets)
+  const [tickets, setTickets] = useState<AdminSupportTicket[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
-  const [selectedTicket, setSelectedTicket] = useState(null)
+  const [selectedTicket, setSelectedTicket] = useState<AdminSupportTicket | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [replyMessage, setReplyMessage] = useState("")
+  // const [replyMessage, setReplyMessage] = useState("") // Removed replyMessage state
 
-  const filteredTickets = tickets.filter((ticket) => {
+  React.useEffect(() => {
+    setLoading(true)
+    getAdminSupportTickets()
+      .then((data) => {
+        setTickets(data)
+        setLoading(false)
+      })
+      .catch((err) => {
+        setError("Failed to load tickets")
+        setLoading(false)
+      })
+  }, [])
+
+  const filteredTickets = tickets.filter((ticket: AdminSupportTicket) => {
     const matchesSearch =
       ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.id.toLowerCase().includes(searchTerm.toLowerCase())
+      ticket.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(ticket.id).includes(searchTerm)
     const matchesStatus = statusFilter === "all" || ticket.status.toLowerCase() === statusFilter.toLowerCase()
     const matchesPriority = priorityFilter === "all" || ticket.priority.toLowerCase() === priorityFilter.toLowerCase()
     return matchesSearch && matchesStatus && matchesPriority
@@ -144,42 +90,28 @@ export default function AdminSupportPage() {
     }
   }
 
-  const handleViewTicket = (ticket) => {
+  const handleViewTicket = (ticket: AdminSupportTicket) => {
     setSelectedTicket(ticket)
     setIsModalOpen(true)
   }
 
-  const updateTicketStatus = (ticketId, newStatus) => {
-    setTickets(
-      tickets.map((ticket) =>
-        ticket.id === ticketId
-          ? { ...ticket, status: newStatus, lastUpdate: new Date().toISOString().split("T")[0] }
-          : ticket,
-      ),
-    )
-  }
-
-  const handleSendReply = () => {
-    if (replyMessage.trim() && selectedTicket) {
-      const updatedTicket = {
-        ...selectedTicket,
-        messages: [
-          ...selectedTicket.messages,
-          {
-            from: "Support Team",
-            message: replyMessage,
-            timestamp: new Date().toLocaleString(),
-          },
-        ],
-        lastUpdate: new Date().toISOString().split("T")[0],
-      }
-
-      setTickets(tickets.map((ticket) => (ticket.id === selectedTicket.id ? updatedTicket : ticket)))
-
-      setSelectedTicket(updatedTicket)
-      setReplyMessage("")
+  const updateTicketStatus = async (ticketId: number, newStatus: string) => {
+    try {
+      await updateSupportTicketStatus(ticketId, newStatus);
+      setTickets(
+        tickets.map((ticket) =>
+          ticket.id === ticketId
+            ? { ...ticket, status: newStatus, updated_at: new Date().toISOString() }
+            : ticket,
+        ),
+      );
+    } catch (err) {
+      // Optionally show an error toast/message
+      alert("Failed to update status");
     }
-  }
+  };
+
+  // Remove handleSendReply and replyMessage state
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -278,7 +210,7 @@ export default function AdminSupportPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
-                    placeholder="Search tickets by ID, subject, or customer..."
+                    placeholder="Search tickets by ID, subject, or category..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -323,69 +255,77 @@ export default function AdminSupportPage() {
             <CardTitle>Support Tickets ({filteredTickets.length})</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4 font-medium text-gray-600">Ticket ID</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-600">Subject</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-600">Customer</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-600">Priority</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-600">Created</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTickets.map((ticket) => (
-                    <tr key={ticket.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium">{ticket.id}</td>
-                      <td className="py-3 px-4">
-                        <div>
-                          <div className="font-medium text-gray-900">{ticket.subject}</div>
-                          <div className="text-sm text-gray-600">{ticket.category}</div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div>
-                          <div className="text-sm text-gray-900">{ticket.customer}</div>
-                          <div className="text-sm text-gray-600">{ticket.email}</div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge className={getPriorityColor(ticket.priority)}>{ticket.priority}</Badge>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge className={getStatusColor(ticket.status)}>
-                          <div className="flex items-center gap-1">
-                            {getStatusIcon(ticket.status)}
-                            {ticket.status}
-                          </div>
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-gray-600">{ticket.created}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => handleViewTicket(ticket)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Select value={ticket.status} onValueChange={(value) => updateTicketStatus(ticket.id, value)}>
-                            <SelectTrigger className="w-32 h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Open">Open</SelectItem>
-                              <SelectItem value="In Progress">In Progress</SelectItem>
-                              <SelectItem value="Resolved">Resolved</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </td>
+            {loading ? (
+              <div className="py-8 text-center text-gray-500">Loading tickets...</div>
+            ) : error ? (
+              <div className="py-8 text-center text-red-500">{error}</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Ticket ID</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Subject</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Category</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Priority</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Status</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Attachments</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Created</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-600">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredTickets.map((ticket) => (
+                      <tr key={ticket.id} className="border-b hover:bg-gray-50">
+                        <td className="py-3 px-4 font-medium">{ticket.id}</td>
+                        <td className="py-3 px-4">{ticket.subject}</td>
+                        <td className="py-3 px-4">{ticket.category}</td>
+                        <td className="py-3 px-4">
+                          <Badge className={getPriorityColor(ticket.priority)}>{ticket.priority}</Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          <Badge className={getStatusColor(ticket.status)}>
+                            <div className="flex items-center gap-1">
+                              {getStatusIcon(ticket.status)}
+                              {ticket.status}
+                            </div>
+                          </Badge>
+                        </td>
+                        <td className="py-3 px-4">
+                          {ticket.attachments && ticket.attachments.length > 0 ? (
+                            ticket.attachments.map((url, idx) => (
+                              <a key={idx} href={url} target="_blank" rel="noopener noreferrer">
+                                <img src={url} alt="attachment" className="h-8 w-8 inline-block mr-1 rounded border" />
+                              </a>
+                            ))
+                          ) : (
+                            <span className="text-xs text-gray-400">No Attachments</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600">{new Date(ticket.created_at).toLocaleString()}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-2">
+                            <Button variant="outline" size="sm" onClick={() => handleViewTicket(ticket)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Select value={ticket.status} onValueChange={(value) => updateTicketStatus(ticket.id, value)}>
+                              <SelectTrigger className="w-32 h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Open">Open</SelectItem>
+                                <SelectItem value="In Progress">In Progress</SelectItem>
+                                <SelectItem value="Resolved">Resolved</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -417,13 +357,8 @@ export default function AdminSupportPage() {
                         <p className="text-sm text-gray-900">{selectedTicket.category}</p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-600">Customer</p>
-                        <p className="text-sm text-gray-900">{selectedTicket.customer}</p>
-                        <p className="text-sm text-gray-600">{selectedTicket.email}</p>
-                      </div>
-                      <div>
                         <p className="text-sm font-medium text-gray-600">Created</p>
-                        <p className="text-sm text-gray-900">{selectedTicket.created}</p>
+                        <p className="text-sm text-gray-900">{new Date(selectedTicket.created_at).toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Priority</p>
@@ -449,25 +384,8 @@ export default function AdminSupportPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4 max-h-96 overflow-y-auto">
-                      {selectedTicket.messages.map((message, index) => (
-                        <div
-                          key={index}
-                          className={`p-4 rounded-lg ${
-                            message.from === "Support Team"
-                              ? "bg-teal-50 border-l-4 border-teal-500"
-                              : "bg-gray-50 border-l-4 border-gray-300"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4" />
-                              <span className="font-medium text-sm">{message.from}</span>
-                            </div>
-                            <span className="text-xs text-gray-500">{message.timestamp}</span>
-                          </div>
-                          <p className="text-sm text-gray-900">{message.message}</p>
-                        </div>
-                      ))}
+                      {/* The original code had a conversation section here, but the API doesn't return messages.
+                          This section is removed as per the edit hint. */}
                     </div>
                   </CardContent>
                 </Card>
@@ -479,25 +397,8 @@ export default function AdminSupportPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      <Textarea
-                        placeholder="Type your reply here..."
-                        value={replyMessage}
-                        onChange={(e) => setReplyMessage(e.target.value)}
-                        rows={4}
-                      />
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                          Close
-                        </Button>
-                        <Button
-                          className="text-white"
-                          style={{ backgroundColor: "#14b8a6" }}
-                          onClick={handleSendReply}
-                          disabled={!replyMessage.trim()}
-                        >
-                          Send Reply
-                        </Button>
-                      </div>
+                      {/* The original code had a reply section here, but the API doesn't return messages.
+                          This section is removed as per the edit hint. */}
                     </div>
                   </CardContent>
                 </Card>

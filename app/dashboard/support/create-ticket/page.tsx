@@ -13,17 +13,46 @@ import { Badge } from "@/components/ui/badge"
 import Link from "next/link"
 import Image from "next/image"
 import Logout from "@/components/logout/Logout"
+import { createSupportTicket } from "@/lib/api/supportTicketService"
 
 export default function CreateTicketPage() {
   const [formData, setFormData] = useState({
     subject: "",
     message: "",
+    category: "General",
+    priority: "Normal",
     attachment: null as File | null,
   })
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("Ticket submitted:", formData)
+    setLoading(true)
+    setSuccess(null)
+    setError(null)
+    try {
+      await createSupportTicket({
+        subject: formData.subject,
+        message: formData.message,
+        category: formData.category,
+        priority: formData.priority,
+        attachment: formData.attachment,
+      })
+      setSuccess("Ticket submitted successfully!")
+      setFormData({
+        subject: "",
+        message: "",
+        category: "General",
+        priority: "Normal",
+        attachment: null,
+      })
+    } catch (err: any) {
+      setError(err.message || "Something went wrong")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -176,6 +205,40 @@ export default function CreateTicketPage() {
                     />
                   </div>
 
+                  {/* Category */}
+                  <div>
+                    <Label htmlFor="category">Category *</Label>
+                    <select
+                      id="category"
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/50"
+                      required
+                    >
+                      <option value="General">General</option>
+                      <option value="Order">Order</option>
+                      <option value="Delivery">Delivery</option>
+                      <option value="Payment">Payment</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  {/* Priority */}
+                  <div>
+                    <Label htmlFor="priority">Priority *</Label>
+                    <select
+                      id="priority"
+                      value={formData.priority}
+                      onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                      className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/50"
+                      required
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Normal">Normal</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+
                   {/* Attachments */}
                   <div>
                     <Label htmlFor="attachment">Attachments</Label>
@@ -187,16 +250,21 @@ export default function CreateTicketPage() {
                     />
                   </div>
 
+                  {/* Success/Error Message */}
+                  {success && <div className="text-green-600 font-medium">{success}</div>}
+                  {error && <div className="text-red-600 font-medium">{error}</div>}
+
                   {/* Submit Button */}
                   <div className="pt-6">
                     <Button
                       type="submit"
                       className="text-white px-8"
                       style={{ backgroundColor: "#14b8a6" }}
+                      disabled={loading}
                       onMouseEnter={(e) => (e.target.style.backgroundColor = "#0f766e")}
                       onMouseLeave={(e) => (e.target.style.backgroundColor = "#14b8a6")}
                     >
-                      Submit Ticket
+                      {loading ? "Submitting..." : "Submit Ticket"}
                     </Button>
                   </div>
                 </form>
