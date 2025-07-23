@@ -167,24 +167,52 @@ export default function AdminUsersPage() {
       fetchUsers();
       reset();
       setIsAddModalOpen(false);
-    } catch (error) {
-      toast.error("Failed to create user");
+    } catch (error: any) {
+      if (error?.response?.status !== 422) {
+        toast.error("Failed to create user");
+      }
       console.error("Error creating user:", error);
     } finally {
       setFormLoading(false);
     }
   };
 
+  const isEditFormChanged = () => {
+    if (!selectedUser) return false;
+    return (
+      editForm.first_name !== selectedUser.first_name ||
+      editForm.last_name !== selectedUser.last_name ||
+      editForm.date_of_birth !== selectedUser.date_of_birth ||
+      editForm.phone_number !== selectedUser.phone_number ||
+      editForm.gender !== selectedUser.gender ||
+      editForm.street_address !== selectedUser.street_address ||
+      editForm.county !== selectedUser.county ||
+      editForm.city !== selectedUser.city ||
+      editForm.zip_postal_code !== selectedUser.zip_postal_code ||
+      editForm.ethnicity !== selectedUser.ethnicity ||
+      editForm.email !== selectedUser.email ||
+      editForm.role_id !== selectedUser.role_id ||
+      editForm.status !== selectedUser.status
+    );
+  };
+
   const handleSaveEdit = async () => {
     if (!selectedUser) return;
+    if (!isEditFormChanged()) {
+      toast.info("No changes detected.");
+      setIsEditModalOpen(false);
+      return;
+    }
     try {
       setEditLoading(true);
       await updateUser(selectedUser.id, editForm);
       toast.success("User updated successfully");
       fetchUsers();
       setIsEditModalOpen(false);
-    } catch (error) {
-      toast.error("Failed to update user");
+    } catch (error: any) {
+      if (error?.response?.status !== 422) {
+        toast.error("Failed to update user");
+      }
       console.error("Update error:", error);
     } finally {
       setEditLoading(false);
@@ -358,7 +386,15 @@ export default function AdminUsersPage() {
               Manage and monitor user accounts
             </p>
           </div>
-          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+          <Dialog
+            open={isAddModalOpen}
+            onOpenChange={(open) => {
+              setIsAddModalOpen(open);
+              if (!open) {
+                reset();
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button
                 className="text-white sm:text-sm text-xs sm:px-3 px-1.5 sm:gap-2 gap-1"
@@ -648,7 +684,10 @@ export default function AdminUsersPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setIsAddModalOpen(false)}
+                    onClick={() => {
+                      setIsAddModalOpen(false);
+                      reset(); // Reset form when canceling
+                    }}
                   >
                     Cancel
                   </Button>
@@ -810,6 +849,12 @@ export default function AdminUsersPage() {
                       Contact
                     </th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600">
+                      Total Orders
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">
+                      Total Amount
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600">
                       Status
                     </th>
                     <th className="text-left py-3 px-4 font-medium text-gray-600">
@@ -842,6 +887,16 @@ export default function AdminUsersPage() {
                           <div className="text-sm text-gray-600">
                             {user.phone_number}
                           </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {user.total_orders || 0}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          ${Number(user.total_amount || 0).toFixed(2)}
                         </div>
                       </td>
                       <td className="py-3 px-4">
@@ -1128,7 +1183,6 @@ export default function AdminUsersPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Modal */}
         <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
           <DialogContent className="max-w-md">
             {userToDelete && (

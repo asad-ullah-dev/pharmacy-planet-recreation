@@ -8,10 +8,10 @@ import Link from "next/link"
 import Image from "next/image"
 import Logout from "@/components/logout/Logout"
 import WithAuth from "@/components/auth/WithAuth"
-
+   
 export default function DashboardPage() {
   const dashboardItems = [
-    {
+    { 
       title: "Manage Account Details",
       icon: User,
       href: "/dashboard/account",
@@ -134,7 +134,7 @@ export default function DashboardPage() {
           >
             START MY CONSULTATION
           </Button>
-        </div>
+        </div> 
 
         {/* Dashboard Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

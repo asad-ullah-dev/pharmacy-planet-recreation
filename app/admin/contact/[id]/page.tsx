@@ -4,14 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  ArrowLeft,
-  Mail,
-  Phone,
-  Calendar,
-  User,
-  MessageSquare,
-} from "lucide-react";
+import { ArrowLeft, Mail, Phone, Calendar, User } from "lucide-react";
 import Link from "next/link";
 import Logout from "@/components/logout/Logout";
 import { getContactById, Contact } from "@/lib/api/contactService";
@@ -70,7 +63,7 @@ export default function ContactDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <Mail className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">
             Contact not found
           </h3>
@@ -129,7 +122,7 @@ export default function ContactDetailPage() {
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="md:text-3xl text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <MessageSquare className="h-8 w-8 text-teal-600" />
+            <Mail className="h-8 w-8 text-teal-600" />
             Contact Details
           </h1>
           <p className="text-gray-600 mt-2">
@@ -205,7 +198,7 @@ export default function ContactDetailPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-teal-600" />
+                <Mail className="h-5 w-5 text-teal-600" />
                 Message Details
               </CardTitle>
             </CardHeader>

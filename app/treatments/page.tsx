@@ -26,8 +26,8 @@ export default function TreatmentsPage() {
         setIsLoading(true)
         setError(null)
         const response = await getAllProducts()
-        
-        // Ensure productsData is an array
+        console.log(response,'11111');
+        // Ensure pro ductsData is an array
         if (Array.isArray(response.products)) {
           setProducts(response.products)
           setMedicalConsultation(response.medicalConsultation)
