@@ -1,27 +1,37 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { yupResolver } from "@hookform/resolvers/yup"
-import { loginSchema } from "@/lib/validation/auth"
-import { login } from "@/lib/api/authService"
-import { pharmacyToasts, showLoadingToast, dismissToast } from "@/lib/toast-config"
-import { LoginCredentials } from "@/lib/types"
+import type React from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { loginSchema } from "@/lib/validation/auth";
+import { login } from "@/lib/api/authService";
+import {
+  pharmacyToasts,
+  showLoadingToast,
+  dismissToast,
+} from "@/lib/toast-config";
+import { LoginCredentials } from "@/lib/types";
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const {
     register,
@@ -29,34 +39,34 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginCredentials>({
     resolver: yupResolver(loginSchema),
-  })
+  });
 
   const onSubmit = async (data: LoginCredentials) => {
-    setIsLoading(true)
-    const loadingToast = showLoadingToast('Signing you in...')
+    setIsLoading(true);
+    const loadingToast = showLoadingToast("Signing you in...");
 
     try {
-      const response = await login(data)
-      console.log(response,'response')
-      
-      dismissToast(loadingToast)
-      pharmacyToasts.loginSuccess()
-      console.log(response.user.role.name,'role name')
-      
-      // Redirect based on user role
-      if (response.user.role.name === 'admin') {
-        router.push("/admin/dashboard")
+      const response = await login(data);
+      dismissToast(loadingToast);
+      pharmacyToasts.loginSuccess();
+      console.log(response.user.role.name, "role name");
+      if (response.user.role.name === "admin") {
+        router.push("/admin/dashboard");
       } else {
-        router.push("/dashboard")
+        router.push("/dashboard");
       }
-    } catch (error) {
-      dismissToast(loadingToast)
-      pharmacyToasts.loginError()
-      console.error("Login Error:", error)
+    } catch (error: any) {
+      dismissToast(loadingToast);
+      // Don't show additional error toasts for 404 and 422 errors
+      // as they are already handled by the API client interceptor
+      if (error?.response?.status !== 422 && error?.response?.status !== 404) {
+        pharmacyToasts.loginError();
+      }
+      console.error("Login Error:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <>
@@ -73,10 +83,15 @@ export default function LoginPage() {
               />
             </Link>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign in to your account</h2>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Sign in to your account
+          </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{" "}
-            <Link href="/auth/register" className="font-medium text-primary hover:text-blue-500">
+            <Link
+              href="/auth/register"
+              className="font-medium text-primary hover:text-blue-500"
+            >
               create a new account
             </Link>
           </p>
@@ -86,7 +101,9 @@ export default function LoginPage() {
           <Card>
             <CardHeader>
               <CardTitle>Welcome back</CardTitle>
-              <CardDescription>Enter your credentials to access your account</CardDescription>
+              <CardDescription>
+                Enter your credentials to access your account
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -98,13 +115,17 @@ export default function LoginPage() {
                       type="email"
                       autoComplete="email"
                       {...register("email")}
-                      className={`pl-10 ${errors.email ? 'border-red-500' : ''}`}
+                      className={`pl-10 ${
+                        errors.email ? "border-red-500" : ""
+                      }`}
                       placeholder="Enter your email"
                     />
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   </div>
                   {errors.email && (
-                    <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.email.message}
+                    </p>
                   )}
                 </div>
 
@@ -116,7 +137,9 @@ export default function LoginPage() {
                       type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
                       {...register("password")}
-                      className={`pl-10 pr-10 ${errors.password ? 'border-red-500' : ''}`}
+                      className={`pl-10 pr-10 ${
+                        errors.password ? "border-red-500" : ""
+                      }`}
                       placeholder="Enter your password"
                     />
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -125,11 +148,17 @@ export default function LoginPage() {
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                   {errors.password && (
-                    <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.password.message}
+                    </p>
                   )}
                 </div>
 
@@ -141,13 +170,19 @@ export default function LoginPage() {
                       type="checkbox"
                       className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                     />
-                    <Label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                    <Label
+                      htmlFor="remember-me"
+                      className="ml-2 block text-sm text-gray-900"
+                    >
                       Remember me
                     </Label>
                   </div>
 
                   <div className="text-sm">
-                    <Link href="/auth/forgot-password" className="font-medium text-primary hover:text-blue-500">
+                    <Link
+                      href="/auth/forgot-password"
+                      className="font-medium text-primary hover:text-blue-500"
+                    >
                       Forgot your password?
                     </Link>
                   </div>
@@ -180,5 +215,5 @@ export default function LoginPage() {
         </div>
       </div>
     </>
-  )
+  );
 }

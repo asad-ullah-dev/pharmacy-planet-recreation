@@ -223,6 +223,20 @@ export default function UserDetailPage() {
               </div>
               <div>
                 <Label className="text-sm font-medium text-gray-600">
+                  Total Orders
+                </Label>
+                <p className="text-gray-900">{user.total_orders || 0}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">
+                  Total Amount
+                </Label>
+                <p className="text-gray-900">
+                  ${Number(user.total_amount || 0).toFixed(2)}
+                </p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600">
                   Email Verified
                 </Label>
                 <p className="text-gray-900">

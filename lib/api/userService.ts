@@ -19,6 +19,8 @@ export interface User {
   status: string;
   created_at: string;
   updated_at: string;
+  total_orders: number;
+  total_amount: string | number; // Handle both string and number types
   role: {
     id: number;
     name: string;

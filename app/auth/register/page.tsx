@@ -105,9 +105,12 @@ export default function RegisterPage() {
       dismissToast(loadingToast);
       pharmacyToasts.registerSuccess();
       router.push("/auth/login");
-    } catch (error) {
+    } catch (error: any) {
       dismissToast(loadingToast);
-      pharmacyToasts.registerError();
+      if (error?.response?.status !== 422) {
+        pharmacyToasts.registerError();
+      }
+
       console.error("Registration error:", error);
     } finally {
       setIsLoading(false);

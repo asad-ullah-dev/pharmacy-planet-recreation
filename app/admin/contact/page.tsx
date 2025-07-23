@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Eye, ArrowLeft, MessageSquare } from "lucide-react";
+import { Search, Eye, ArrowLeft, Mail } from "lucide-react";
 import Link from "next/link";
 import Logout from "@/components/logout/Logout";
 import {
@@ -144,7 +144,7 @@ export default function AdminContactsPage() {
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="md:text-3xl text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <MessageSquare className="h-8 w-8 text-teal-600" />
+            <Mail className="h-8 w-8 text-teal-600" />
             Contact Management
           </h1>
           <p className="text-gray-600 mt-2">
@@ -186,14 +186,14 @@ export default function AdminContactsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-teal-600" />
+              <Mail className="h-5 w-5 text-teal-600" />
               Contact Messages ({contacts.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             {contacts.length === 0 ? (
               <div className="text-center py-8">
-                <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <Mail className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   No contacts found
                 </h3>
@@ -256,15 +256,13 @@ export default function AdminContactsPage() {
                           </p>
                         </td>
                         <td className="py-3 px-4">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleViewContact(contact)}
-                            className="text-blue-600 hover:text-blue-800"
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
+                          <div className="flex items-center space-x-2">
+                            <Link href={`/admin/contact/${contact.id}`}>
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     ))}
