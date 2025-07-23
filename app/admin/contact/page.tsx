@@ -242,16 +242,16 @@ export default function AdminContactsPage() {
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <p className="text-gray-600">{contact.email}</p>
+                          <p className="text-gray-600 line-clamp-1">{contact.email}</p>
                         </td>
                         <td className="py-3 px-4">
-                          <p className="text-gray-600">{contact.phone}</p>
+                          <p className="text-gray-600 line-clamp-3">{contact.phone}</p>
                         </td>
                         <td className="py-3 px-4">
-                          <p className="text-gray-600">{contact.subject}</p>
+                          <p className="text-gray-600 line-clamp-2">{contact.subject}</p>
                         </td>
                         <td className="py-3 px-4">
-                          <p className="text-gray-600">
+                          <p className="text-gray-600 line-clamp-3">
                             {formatDate(contact.created_at)}
                           </p>
                         </td>

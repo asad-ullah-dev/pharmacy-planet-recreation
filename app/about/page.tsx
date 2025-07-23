@@ -91,7 +91,7 @@ export default function AboutPage() {
       {/* Stats Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid lg:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="text-4xl font-bold text-primary mb-2">{stat.number}</div>
@@ -169,7 +169,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {values.map((value, index) => (
               <Card key={index} className="text-center p-6 border-primary/20 hover:shadow-lg transition-shadow">
                 <CardContent className="pt-6">
@@ -230,7 +230,7 @@ export default function AboutPage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-8">
             <div>
               <div className="mb-4">
                 <Image

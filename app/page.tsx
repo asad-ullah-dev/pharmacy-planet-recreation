@@ -282,7 +282,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-8 mb-16">
+          <div className="grid lg:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-8 mb-16">
             <div className="text-center">
               <div className="w-20 h-20 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <UserCheck className="w-10 h-10 text-blue-500" />
@@ -410,7 +410,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-8">
             <div>
               <div className="mb-4">
                 <Image
