@@ -1,20 +1,33 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { User, MapPin, MessageCircle, ShoppingCart, Mail, X, Star, Bell } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
-import Image from "next/image"
-import { Switch } from "@/components/ui/switch"
-import Logout from "@/components/logout/Logout"
-import { getUserProfile, updateUserProfile, ProfileUpdateData } from "@/lib/api/profileService"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  User,
+  MapPin,
+  MessageCircle,
+  ShoppingCart,
+  Mail,
+  X,
+  Star,
+  Bell,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import Image from "next/image";
+import { Switch } from "@/components/ui/switch";
+import Logout from "@/components/logout/Logout";
+import {
+  getUserProfile,
+  updateUserProfile,
+  ProfileUpdateData,
+} from "@/lib/api/profileService";
+import { toast } from "sonner";
 
 export default function AccountDetailsPage() {
   const [formData, setFormData] = useState({
@@ -31,10 +44,10 @@ export default function AccountDetailsPage() {
     newPassword: "",
     confirmPassword: "",
     phoneNumber: "",
-  })
+  });
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [isLoadingData, setIsLoadingData] = useState(true)
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const months = [
     "January",
@@ -49,24 +62,24 @@ export default function AccountDetailsPage() {
     "October",
     "November",
     "December",
-  ]
+  ];
 
   // Load existing profile data on component mount
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const profile = await getUserProfile()
-        
+        const profile = await getUserProfile();
+
         // Parse date of birth if it exists
-        let dobDay = "01"
-        let dobMonth = "01"
-        let dobYear = "1990"
-        
+        let dobDay = "01";
+        let dobMonth = "01";
+        let dobYear = "1990";
+
         if (profile.date_of_birth) {
-          const dob = new Date(profile.date_of_birth)
-          dobDay = String(dob.getDate()).padStart(2, "0")
-          dobMonth = String(dob.getMonth() + 1).padStart(2, "0")
-          dobYear = String(dob.getFullYear())
+          const dob = new Date(profile.date_of_birth);
+          dobDay = String(dob.getDate()).padStart(2, "0");
+          dobMonth = String(dob.getMonth() + 1).padStart(2, "0");
+          dobYear = String(dob.getFullYear());
         }
 
         setFormData({
@@ -83,21 +96,21 @@ export default function AccountDetailsPage() {
           newPassword: "",
           confirmPassword: "",
           phoneNumber: profile.phone_number || "",
-        })
+        });
       } catch (error) {
-        console.error('Error loading profile:', error)
+        console.error("Error loading profile:", error);
         // If no profile exists, keep the default form data
       } finally {
-        setIsLoadingData(false)
+        setIsLoadingData(false);
       }
-    }
+    };
 
-    loadProfile()
-  }, [])
+    loadProfile();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
       // Prepare the data for API
@@ -106,50 +119,60 @@ export default function AccountDetailsPage() {
         last_name: formData.lastName,
         phone_number: formData.phoneNumber,
         gender: formData.gender,
-      }
+      };
 
       // Add date of birth if all fields are filled
       if (formData.dobDay && formData.dobMonth && formData.dobYear) {
-        const dateOfBirth = `${formData.dobYear}-${formData.dobMonth}-${formData.dobDay}`
-        profileData.date_of_birth = dateOfBirth
+        const dateOfBirth = `${formData.dobYear}-${formData.dobMonth}-${formData.dobDay}`;
+        profileData.date_of_birth = dateOfBirth;
       }
 
       // Add password fields if password change is requested
-      if (formData.changePassword && formData.newPassword && formData.confirmPassword) {
+      if (
+        formData.changePassword &&
+        formData.newPassword &&
+        formData.confirmPassword
+      ) {
         if (formData.newPassword !== formData.confirmPassword) {
-          toast.error("New passwords don't match!")
-          setIsLoading(false)
-          return
+          toast.error("New passwords don't match!");
+          setIsLoading(false);
+          return;
         }
         if (formData.newPassword.length < 8) {
-          toast.error("Password must be at least 8 characters long!")
-          setIsLoading(false)
-          return
+          toast.error("Password must be at least 8 characters long!");
+          setIsLoading(false);
+          return;
         }
-        profileData.password = formData.newPassword
-        profileData.password_confirmation = formData.confirmPassword
+        profileData.password = formData.newPassword;
+        profileData.password_confirmation = formData.confirmPassword;
       }
 
-      const response = await updateUserProfile(profileData)
-      toast.success(response.message || 'Profile updated successfully!')
-      
+      const response = await updateUserProfile(profileData);
+      toast.success(response.message || "Profile updated successfully!");
+
       // Reset password fields after successful update
       if (formData.changePassword) {
-        setFormData(prev => ({
+        setFormData((prev) => ({
           ...prev,
           changePassword: false,
           currentPassword: "",
           newPassword: "",
           confirmPassword: "",
-        }))
+        }));
       }
-    } catch (error) {
-      console.error('Error updating profile:', error)
-      // Error handling is done by the API client interceptor
+    } catch (error: any) {
+      console.error("Error updating profile:", error);
+
+      if (error?.response?.status === 403) {
+        const errorMessage = error?.response?.data?.message || "Access denied";
+        toast.error(errorMessage);
+      } else if (error?.response?.status !== 422) {
+        toast.error("Failed to update profile. Please try again.");
+      }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   if (isLoadingData) {
     return (
@@ -159,7 +182,7 @@ export default function AccountDetailsPage() {
           <p className="mt-4 text-gray-600">Loading profile details...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -170,13 +193,20 @@ export default function AccountDetailsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center lg:space-x-8 space-x-4">
               <Link href="/" className="flex items-center">
-                <Image src="/images/ozempo-logo.png" alt="Ozempo" width={150} height={40} className="h-10 w-auto" />
-                </Link>
-                  <div className="hidden md:block">
-                   <span className="lg:text-sm text-xs font-medium text-gray-600">WEIGHT LOSS CLINIC</span>
-                  </div>
+                <Image
+                  src="/images/ozempo-logo.png"
+                  alt="Ozempo"
+                  width={150}
+                  height={40}
+                  className="h-10 w-auto"
+                />
+              </Link>
+              <div className="hidden md:block">
+                <span className="lg:text-sm text-xs font-medium text-gray-600">
+                  WEIGHT LOSS CLINIC
+                </span>
               </div>
-            
+            </div>
 
             <div className="flex items-center sm:space-x-6 space-x-3">
               <div className="hidden md:flex items-center space-x-2">
@@ -184,7 +214,10 @@ export default function AccountDetailsPage() {
                   <Star className="w-4 h-4 text-yellow-400 fill-current" />
                   <span className="text-sm font-medium ml-1">Excellent</span>
                 </div>
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                <Badge
+                  variant="secondary"
+                  className="bg-green-100 text-green-800"
+                >
                   2,354 reviews on Trustpilot
                 </Badge>
               </div>
@@ -199,11 +232,13 @@ export default function AccountDetailsPage() {
               </div>
 
               <Link href="/">
-                <Button className="bg-primary hover:bg-blue-600 text-white">HOME</Button>
+                <Button className="bg-primary hover:bg-blue-600 text-white">
+                  HOME
+                </Button>
               </Link>
-               <div>
-                   <Logout />
-                </div>
+              <div>
+                <Logout />
+              </div>
             </div>
           </div>
         </div>
@@ -216,7 +251,9 @@ export default function AccountDetailsPage() {
           <div className="lg:col-span-3">
             <Card>
               <CardContent className="p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">My Account</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                  My Account
+                </h2>
                 <nav className="space-y-2">
                   <Link
                     href="/dashboard/account"
@@ -276,7 +313,9 @@ export default function AccountDetailsPage() {
           <div className="lg:col-span-9">
             <Card>
               <CardContent className="p-8">
-                <h1 className="text-2xl font-semibold text-gray-900 mb-8">Edit Account Information</h1>
+                <h1 className="text-2xl font-semibold text-gray-900 mb-8">
+                  Edit Account Information
+                </h1>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Name Fields */}
@@ -286,7 +325,12 @@ export default function AccountDetailsPage() {
                       <Input
                         id="firstName"
                         value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            firstName: e.target.value,
+                          })
+                        }
                         className="mt-1"
                         required
                       />
@@ -296,7 +340,9 @@ export default function AccountDetailsPage() {
                       <Input
                         id="lastName"
                         value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, lastName: e.target.value })
+                        }
                         className="mt-1"
                         required
                       />
@@ -310,7 +356,12 @@ export default function AccountDetailsPage() {
                       id="phoneNumber"
                       type="tel"
                       value={formData.phoneNumber}
-                      onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          phoneNumber: e.target.value,
+                        })
+                      }
                       className="mt-1"
                       placeholder="Enter your phone number"
                     />
@@ -323,11 +374,16 @@ export default function AccountDetailsPage() {
                       <select
                         className="sm:px-3 px-1.5 py-2 border border-gray-300 rounded-md flex-1"
                         value={formData.dobDay}
-                        onChange={(e) => setFormData({ ...formData, dobDay: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, dobDay: e.target.value })
+                        }
                         required
                       >
                         {Array.from({ length: 31 }, (_, i) => (
-                          <option key={i + 1} value={String(i + 1).padStart(2, "0")}>
+                          <option
+                            key={i + 1}
+                            value={String(i + 1).padStart(2, "0")}
+                          >
                             {String(i + 1).padStart(2, "0")}
                           </option>
                         ))}
@@ -335,11 +391,16 @@ export default function AccountDetailsPage() {
                       <select
                         className="sm:px-3 px-1.5 py-2 border border-gray-300 rounded-md flex-1"
                         value={formData.dobMonth}
-                        onChange={(e) => setFormData({ ...formData, dobMonth: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, dobMonth: e.target.value })
+                        }
                         required
                       >
                         {months.map((month, index) => (
-                          <option key={index + 1} value={String(index + 1).padStart(2, "0")}>
+                          <option
+                            key={index + 1}
+                            value={String(index + 1).padStart(2, "0")}
+                          >
                             {month}
                           </option>
                         ))}
@@ -347,16 +408,18 @@ export default function AccountDetailsPage() {
                       <select
                         className="sm:px-3 px-1.5 py-2 border border-gray-300 rounded-md flex-1"
                         value={formData.dobYear}
-                        onChange={(e) => setFormData({ ...formData, dobYear: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, dobYear: e.target.value })
+                        }
                         required
                       >
                         {Array.from({ length: 100 }, (_, i) => {
-                          const year = new Date().getFullYear() - i
+                          const year = new Date().getFullYear() - i;
                           return (
                             <option key={year} value={year}>
                               {year}
                             </option>
-                          )
+                          );
                         })}
                       </select>
                     </div>
@@ -372,7 +435,9 @@ export default function AccountDetailsPage() {
                           name="gender"
                           value="male"
                           checked={formData.gender === "male"}
-                          onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, gender: e.target.value })
+                          }
                           className="sr-only"
                           required
                         />
@@ -392,7 +457,9 @@ export default function AccountDetailsPage() {
                           name="gender"
                           value="female"
                           checked={formData.gender === "female"}
-                          onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                          onChange={(e) =>
+                            setFormData({ ...formData, gender: e.target.value })
+                          }
                           className="sr-only"
                           required
                         />
@@ -416,7 +483,12 @@ export default function AccountDetailsPage() {
                       <Switch
                         id="changePassword"
                         checked={formData.changePassword}
-                        onCheckedChange={(checked) => setFormData({ ...formData, changePassword: checked as boolean })}
+                        onCheckedChange={(checked) =>
+                          setFormData({
+                            ...formData,
+                            changePassword: checked as boolean,
+                          })
+                        }
                       />
                     </div>
                   </div>
@@ -424,7 +496,9 @@ export default function AccountDetailsPage() {
                   {/* Password Section */}
                   {formData.changePassword && (
                     <div className="border-t pt-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Change Password
+                      </h3>
                       <div className="space-y-4 max-w-md">
                         <div>
                           <Label htmlFor="newPassword">New Password</Label>
@@ -432,20 +506,34 @@ export default function AccountDetailsPage() {
                             id="newPassword"
                             type="password"
                             value={formData.newPassword}
-                            onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                newPassword: e.target.value,
+                              })
+                            }
                             className="mt-1"
                             placeholder="Enter your new password"
                             minLength={8}
                           />
-                          <p className="text-sm text-gray-500 mt-1">Password must be at least 8 characters long</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Password must be at least 8 characters long
+                          </p>
                         </div>
                         <div>
-                          <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                          <Label htmlFor="confirmPassword">
+                            Confirm New Password
+                          </Label>
                           <Input
                             id="confirmPassword"
                             type="password"
                             value={formData.confirmPassword}
-                            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                confirmPassword: e.target.value,
+                              })
+                            }
                             className="mt-1"
                             placeholder="Confirm your new password"
                             minLength={8}
@@ -464,12 +552,14 @@ export default function AccountDetailsPage() {
                       style={{ backgroundColor: "#14b8a6" }}
                       onMouseEnter={(e) => {
                         if (!isLoading) {
-                          (e.target as HTMLElement).style.backgroundColor = "#0f766e"
+                          (e.target as HTMLElement).style.backgroundColor =
+                            "#0f766e";
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (!isLoading) {
-                          (e.target as HTMLElement).style.backgroundColor = "#14b8a6"
+                          (e.target as HTMLElement).style.backgroundColor =
+                            "#14b8a6";
                         }
                       }}
                     >
@@ -479,7 +569,7 @@ export default function AccountDetailsPage() {
                           Saving...
                         </>
                       ) : (
-                        'Save'
+                        "Save"
                       )}
                     </Button>
                   </div>
@@ -490,5 +580,5 @@ export default function AccountDetailsPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }

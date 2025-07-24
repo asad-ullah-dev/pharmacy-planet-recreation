@@ -1,75 +1,98 @@
-"use client"
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, ShoppingCart, Star, Bell, Package, Calendar, TrendingUp, AlertCircle } from "lucide-react"
-import Link from "next/link"
-import Image from "next/image"
-import Logout from "@/components/logout/Logout"
-import { getAllProducts, Product } from "@/lib/api/productService"
-import { toast } from "sonner"
+"use client";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowLeft,
+  ShoppingCart,
+  Star,
+  Bell,
+  Package,
+  Calendar,
+  TrendingUp,
+  AlertCircle,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
+import Logout from "@/components/logout/Logout";
+import { getAllProducts, Product } from "@/lib/api/productService";
+import { toast } from "sonner";
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
-  const [medicalConsultation, setMedicalConsultation] = useState<boolean>(true)
-  const [currentImages, setCurrentImages] = useState<{ [productId: number]: number }>({});
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [medicalConsultation, setMedicalConsultation] = useState<boolean>(true);
+  const [currentImages, setCurrentImages] = useState<{
+    [productId: number]: number;
+  }>({});
 
   // Load products on component mount
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const response = await getAllProducts()
-        
-        // Ensure productsData is an array
+        const response = await getAllProducts();
         if (Array.isArray(response.products)) {
-          setProducts(response.products)
-          setMedicalConsultation(response.medicalConsultation)
+          setProducts(response.products);
+          setMedicalConsultation(response.medicalConsultation);
         } else {
-          console.error('Products data is not an array:', response.products)
-          setProducts([])
-          setMedicalConsultation(false)
-          toast.error("Failed to load products")
+          console.error("Products data is not an array:", response.products);
+          setProducts([]);
+          setMedicalConsultation(false);
         }
-      } catch (error) {
-        console.error('Error loading products:', error)
-        setProducts([])
-        setMedicalConsultation(false)
-        toast.error("Failed to load products")
-      } finally {
-        setIsLoading(false)
-      }
-    }
+      } catch (error: any) {
+        console.error("Error loading products:", error);
+        setProducts([]);
+        setMedicalConsultation(false);
 
-    loadProducts()
-  }, [])
+        if (error?.response?.status === 403) {
+          const errorMessage =
+            error?.response?.data?.message || "Access denied";
+          toast.error(errorMessage);
+        } else if (error?.response?.status !== 422) {
+          toast.error("Failed to load products");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProducts();
+  }, []);
 
   // Get unique categories
-  const categories = ["all", ...Array.from(new Set(products.map(product => product.category)))]
+  const categories = [
+    "all",
+    ...Array.from(new Set(products.map((product) => product.category))),
+  ];
 
   // Filter products by category
-  const filteredProducts = selectedCategory === "all" 
-    ? products 
-    : products.filter(product => product.category === selectedCategory)
+  const filteredProducts =
+    selectedCategory === "all"
+      ? products
+      : products.filter((product) => product.category === selectedCategory);
 
   // Format price
   const formatPrice = (price: string) => {
-    return `$${parseFloat(price).toFixed(2)}`
-  }
+    return `$${parseFloat(price).toFixed(2)}`;
+  };
 
   // Get category icon and color
   const getCategoryStyle = (category: string) => {
     switch (category.toLowerCase()) {
-      case 'antibiotics':
-        return { icon: Package, color: 'text-blue-500', bgColor: 'bg-blue-50' }
-      case 'pain relief / analgesics':
-        return { icon: TrendingUp, color: 'text-red-500', bgColor: 'bg-red-50' }
+      case "antibiotics":
+        return { icon: Package, color: "text-blue-500", bgColor: "bg-blue-50" };
+      case "pain relief / analgesics":
+        return {
+          icon: TrendingUp,
+          color: "text-red-500",
+          bgColor: "bg-red-50",
+        };
       default:
-        return { icon: Package, color: 'text-gray-500', bgColor: 'bg-gray-50' }
+        return { icon: Package, color: "text-gray-500", bgColor: "bg-gray-50" };
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -79,7 +102,7 @@ export default function ProductsPage() {
           <p className="mt-4 text-gray-600">Loading products...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -90,10 +113,18 @@ export default function ProductsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center lg:space-x-8 md:space-x-4">
               <Link href="/" className="flex items-center">
-                <Image src="/images/ozempo-logo.png" alt="Ozempo" width={150} height={40} className="h-10 w-auto" />
+                <Image
+                  src="/images/ozempo-logo.png"
+                  alt="Ozempo"
+                  width={150}
+                  height={40}
+                  className="h-10 w-auto"
+                />
               </Link>
               <div className="hidden md:block">
-                <span className="text-sm font-medium text-gray-600">WEIGHT LOSS CLINIC</span>
+                <span className="text-sm font-medium text-gray-600">
+                  WEIGHT LOSS CLINIC
+                </span>
               </div>
             </div>
 
@@ -103,7 +134,10 @@ export default function ProductsPage() {
                   <Star className="w-4 h-4 text-yellow-400 fill-current" />
                   <span className="text-sm font-medium ml-1">Excellent</span>
                 </div>
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                <Badge
+                  variant="secondary"
+                  className="bg-green-100 text-green-800"
+                >
                   2,354 reviews on Trustpilot
                 </Badge>
               </div>
@@ -118,11 +152,13 @@ export default function ProductsPage() {
               </div>
 
               <Link href="/">
-                <Button className="bg-primary hover:bg-blue-600 text-white">HOME</Button>
+                <Button className="bg-primary hover:bg-blue-600 text-white">
+                  HOME
+                </Button>
               </Link>
-               <div>
-                   <Logout />
-                </div>
+              <div>
+                <Logout />
+              </div>
             </div>
           </div>
         </div>
@@ -143,8 +179,10 @@ export default function ProductsPage() {
                       Medical Consultation Required
                     </h3>
                     <p className="text-yellow-700 mb-4">
-                      Before you can access our products, you need to complete a medical consultation form. 
-                      This helps our medical team understand your health needs and provide the most appropriate care.
+                      Before you can access our products, you need to complete a
+                      medical consultation form. This helps our medical team
+                      understand your health needs and provide the most
+                      appropriate care.
                     </p>
                     <Link href="/consultation">
                       <Button className="bg-yellow-600 hover:bg-yellow-700 text-white">
@@ -165,11 +203,18 @@ export default function ProductsPage() {
           {/* Page Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="md:text-3xl text-2xl font-bold text-gray-900 mb-2">Available Products</h1>
-              <p className="text-gray-600">Browse our comprehensive range of medications and treatments</p>
+              <h1 className="md:text-3xl text-2xl font-bold text-gray-900 mb-2">
+                Available Products
+              </h1>
+              <p className="text-gray-600">
+                Browse our comprehensive range of medications and treatments
+              </p>
             </div>
             <Link href="/consultation">
-              <Button variant="outline" className="flex items-center sm:gap-2 gap-1 sm:text-sm text-xs px-3">
+              <Button
+                variant="outline"
+                className="flex items-center sm:gap-2 gap-1 sm:text-sm text-xs px-3"
+              >
                 <ArrowLeft className="w-4 h-4 sm:mr-2" />
                 Back to Consultation
               </Button>
@@ -180,18 +225,22 @@ export default function ProductsPage() {
           <div className="mb-8">
             <div className="flex flex-wrap gap-2">
               {categories.map((category) => {
-                const isActive = selectedCategory === category
+                const isActive = selectedCategory === category;
                 return (
                   <Button
                     key={category}
                     variant={isActive ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSelectedCategory(category)}
-                    className={isActive ? "bg-primary text-white" : "bg-white text-gray-700"}
+                    className={
+                      isActive
+                        ? "bg-primary text-white"
+                        : "bg-white text-gray-700"
+                    }
                   >
                     {category === "all" ? "All Products" : category}
                   </Button>
-                )
+                );
               })}
             </div>
           </div>
@@ -200,8 +249,8 @@ export default function ProductsPage() {
           {filteredProducts.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProducts.map((product) => {
-                const categoryStyle = getCategoryStyle(product.category)
-                const CategoryIcon = categoryStyle.icon
+                const categoryStyle = getCategoryStyle(product.category);
+                const CategoryIcon = categoryStyle.icon;
                 const currentImage = currentImages[product.id] || 0;
 
                 return (
@@ -217,8 +266,12 @@ export default function ProductsPage() {
                               className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                             />
                           ) : (
-                            <div className={`w-32 h-32 ${categoryStyle.bgColor} rounded-full flex items-center justify-center`}>
-                              <CategoryIcon className={`w-16 h-16 ${categoryStyle.color}`} />
+                            <div
+                              className={`w-32 h-32 ${categoryStyle.bgColor} rounded-full flex items-center justify-center`}
+                            >
+                              <CategoryIcon
+                                className={`w-16 h-16 ${categoryStyle.color}`}
+                              />
                             </div>
                           )}
                         </div>
@@ -230,13 +283,15 @@ export default function ProductsPage() {
                                 key={idx}
                                 type="button"
                                 className={`w-2 h-2 rounded-full transition-all duration-150 ${
-                                  currentImage === idx ? 'bg-primary scale-125' : 'bg-gray-300'
+                                  currentImage === idx
+                                    ? "bg-primary scale-125"
+                                    : "bg-gray-300"
                                 }`}
-                                onClick={e => {
+                                onClick={(e) => {
                                   e.preventDefault();
-                                  setCurrentImages(prev => ({
+                                  setCurrentImages((prev) => ({
                                     ...prev,
-                                    [product.id]: idx
+                                    [product.id]: idx,
                                   }));
                                 }}
                                 aria-label={`Show image ${idx + 1}`}
@@ -244,13 +299,21 @@ export default function ProductsPage() {
                             ))}
                           </div>
                         )}
-                        <CardTitle className="text-lg text-gray-900 line-clamp-2">{product.name}</CardTitle>
+                        <CardTitle className="text-lg text-gray-900 line-clamp-2">
+                          {product.name}
+                        </CardTitle>
                         <div className="flex items-center space-x-2">
-                          <Badge className="bg-blue-100 text-blue-800">{product.category}</Badge>
+                          <Badge className="bg-blue-100 text-blue-800">
+                            {product.category}
+                          </Badge>
                           {product.available_stock > 0 ? (
-                            <Badge className="bg-green-100 text-green-800">In Stock</Badge>
+                            <Badge className="bg-green-100 text-green-800">
+                              In Stock
+                            </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-red-600">Out of Stock</Badge>
+                            <Badge variant="outline" className="text-red-600">
+                              Out of Stock
+                            </Badge>
                           )}
                         </div>
                       </CardHeader>
@@ -258,7 +321,7 @@ export default function ProductsPage() {
                         <p className="text-gray-600 text-sm mb-4 line-clamp-3">
                           {product.description}
                         </p>
-                        
+
                         {/* Product Details */}
                         <div className="space-y-2 mb-4">
                           <div className="flex items-center text-sm text-gray-500">
@@ -267,7 +330,12 @@ export default function ProductsPage() {
                           </div>
                           <div className="flex items-center text-sm text-gray-500">
                             <Calendar className="w-4 h-4 mr-2" />
-                            <span>Expires: {new Date(product.expiry_date).toLocaleDateString()}</span>
+                            <span>
+                              Expires:{" "}
+                              {new Date(
+                                product.expiry_date
+                              ).toLocaleDateString()}
+                            </span>
                           </div>
                           {product.total_sold > 0 && (
                             <div className="flex items-center text-sm text-gray-500">
@@ -279,14 +347,18 @@ export default function ProductsPage() {
 
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="text-2xl font-bold text-gray-900">{formatPrice(product.price)}</span>
+                            <span className="text-2xl font-bold text-gray-900">
+                              {formatPrice(product.price)}
+                            </span>
                           </div>
-                          <Button  className="bg-primary hover:bg-blue-600 text-white">
+                          <Button className="bg-primary hover:bg-blue-600 text-white">
                             <ShoppingCart className="w-4 h-4 mr-2" />
-                            {product.available_stock > 0 ? "View details" : "Out of Stock"}
+                            {product.available_stock > 0
+                              ? "View details"
+                              : "Out of Stock"}
                           </Button>
                         </div>
-                        
+
                         <div className="mt-4 pt-4 border-t border-gray-100">
                           <div className="flex items-center text-sm text-gray-500">
                             <Star className="w-4 h-4 text-yellow-400 fill-current mr-1" />
@@ -297,27 +369,38 @@ export default function ProductsPage() {
                         </div>
                       </CardContent>
                     </Card>
-                    </Link>
-                  )
-                })}
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Package className="w-8 h-8 text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No products found</h3>
-              <p className="text-gray-600">No products available in this category at the moment.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No products found
+              </h3>
+              <p className="text-gray-600">
+                No products available in this category at the moment.
+              </p>
             </div>
           )}
 
           {/* Information Section */}
           <div className="mt-12 bg-white rounded-lg p-8 border border-gray-200">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Why Choose Our Products?</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+              Why Choose Our Products?
+            </h2>
             <div className="grid md:grid-cols-3 gap-6">
               <div className="text-center">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-6 h-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -326,14 +409,22 @@ export default function ProductsPage() {
                     />
                   </svg>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Quality Assured</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  Quality Assured
+                </h3>
                 <p className="text-gray-600 text-sm">
-                  All products are sourced from licensed manufacturers and meet strict quality standards
+                  All products are sourced from licensed manufacturers and meet
+                  strict quality standards
                 </p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-6 h-6 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -342,12 +433,21 @@ export default function ProductsPage() {
                     />
                   </svg>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Fast Delivery</h3>
-                <p className="text-gray-600 text-sm">Free shipping with delivery within 2-3 business days</p>
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  Fast Delivery
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Free shipping with delivery within 2-3 business days
+                </p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-6 h-6 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -356,7 +456,9 @@ export default function ProductsPage() {
                     />
                   </svg>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Expert Support</h3>
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  Expert Support
+                </h3>
                 <p className="text-gray-600 text-sm">
                   24/7 customer support and consultation with our medical team
                 </p>
@@ -366,5 +468,5 @@ export default function ProductsPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }
