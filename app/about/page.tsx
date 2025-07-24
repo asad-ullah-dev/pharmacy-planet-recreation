@@ -1,11 +1,29 @@
+"use client";
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Stethoscope, Shield, Users, Clock, Heart, CheckCircle, Phone, Mail, MapPin } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import Footer from "@/components/footer/Footer"
+import { useEffect, useState } from "react"
+import { isAuthenticated } from "@/lib/utils/auth"
 
 export default function AboutPage() {
+   const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+  
+    useEffect(() => {
+      // Check authentication status on component mount
+      const checkAuth = () => {
+        const authenticated = isAuthenticated();
+        setIsLoggedIn(authenticated);
+        setIsLoading(false);
+      };
+  
+      checkAuth();
+    }, []);
+    
   const stats = [
     { number: "50,000+", label: "Patients Treated" },
     { number: "98%", label: "Patient Satisfaction" },
@@ -63,14 +81,26 @@ export default function AboutPage() {
 
             <div className="flex items-center sm:space-x-4 space-x-2">
               <Button className="bg-teal-500 hover:bg-teal-600 text-white max-sm:w-full md:text-sm text-xs md:px-4 px-2 md:py-2 py-1">Start Consultation</Button>
-              <Link href="/dashboard">
-                <Button
-                  variant="outline"
-                  className="bg-white text-primary border-primary hover:bg-primary hover:text-white max-sm:w-full md:text-sm text-xs md:px-4 px-2 md:py-2 py-1"
-                >
-                  My Dashboard
-                </Button>
-              </Link>
+              {!isLoading &&
+                  (isLoggedIn ? (
+                    <Link href="/dashboard">
+                      <Button
+                        variant="outline"
+                        className="bg-white text-primary w-full border-primary hover:bg-primary hover:text-white md:text-sm text-xs md:px-4 px-2 md:py-2 py-1"
+                      >
+                        My Dashboard
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Link href="/auth/login">
+                      <Button
+                        variant="outline"
+                        className="bg-white text-primary w-full border-primary hover:bg-primary hover:text-white md:text-sm text-xs md:px-4 px-2 md:py-2 py-1"
+                      >
+                        Login
+                      </Button>
+                    </Link>
+                  ))}
             </div>
           </div>
         </div>

@@ -1,9 +1,27 @@
+"use client";
+
+import { Button } from "@/components/ui/button"
 import { Phone, Mail, MapPin } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import Footer from "@/components/footer/Footer"
+import { isAuthenticated } from "@/lib/utils/auth";
+import { useEffect, useState } from "react";
 
 export default function TermsConditionsPage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+  
+    useEffect(() => {
+      // Check authentication status on component mount
+      const checkAuth = () => {
+        const authenticated = isAuthenticated();
+        setIsLoggedIn(authenticated);
+        setIsLoading(false);
+      };
+  
+      checkAuth();
+    }, []);
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -30,9 +48,26 @@ export default function TermsConditionsPage() {
             </nav>
 
             <div className="flex items-center space-x-4">
-              <Link href="/auth/register" className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded">
-                Login / Sign Up
-              </Link>
+              {!isLoading &&
+                  (isLoggedIn ? (
+                    <Link href="/dashboard">
+                      <Button
+                        variant="outline"
+                        className="bg-white text-primary w-full border-primary hover:bg-primary hover:text-white md:text-sm text-xs md:px-4 px-2 md:py-2 py-1"
+                      >
+                        My Dashboard
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Link href="/auth/login">
+                      <Button
+                        variant="outline"
+                        className="bg-white text-primary w-full border-primary hover:bg-primary hover:text-white md:text-sm text-xs md:px-4 px-2 md:py-2 py-1"
+                      >
+                        Login
+                      </Button>
+                    </Link>
+                  ))}
             </div>
           </div>
         </div>
