@@ -17,6 +17,8 @@ if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
 
 class ApiClient {
   private client: AxiosInstance;
+  private lastErrorToast: { message: string; timestamp: number } | null = null;
+  private readonly TOAST_DEBOUNCE_MS = 2000; // 2 seconds
 
   constructor() {
     this.client = axios.create({
@@ -71,11 +73,11 @@ class ApiClient {
             localStorage.removeItem("user");
             window.location.href = "/auth/login";
           }
-          toast.error("Session expired. Please login again.");
+          this.showToast("Session expired. Please login again.");
           break;
 
         case 403:
-          toast.error(
+          this.showToast(
             "Access denied. You do not have permission to perform this action."
           );
           break;
@@ -83,9 +85,9 @@ class ApiClient {
         case 404:
           // Show the actual error message from the API response
           if (data && typeof data === "object" && "error" in data) {
-            toast.error((data as any).error);
+            this.showToast((data as any).error);
           } else {
-            toast.error("Resource not found.");
+            this.showToast("Resource not found.");
           }
           break;
 
@@ -95,30 +97,47 @@ class ApiClient {
             const errors = (data as any).errors;
             Object.values(errors).forEach((errorMsg: any) => {
               if (Array.isArray(errorMsg)) {
-                errorMsg.forEach((msg: string) => toast.error(msg));
+                errorMsg.forEach((msg: string) => this.showToast(msg));
               } else {
-                toast.error(errorMsg as string);
+                this.showToast(errorMsg as string);
               }
             });
           } else {
-            toast.error("Validation failed. Please check your input.");
+            this.showToast("Validation failed. Please check your input.");
           }
           break;
 
         case 500:
-          toast.error("Server error. Please try again later.");
+          this.showToast("Server error. Please try again later.");
           break;
 
         default:
-          toast.error("Something went wrong. Please try again.");
+          this.showToast("Something went wrong. Please try again.");
       }
     } else if (error.request) {
       // Network error
-      toast.error("Network error. Please check your connection.");
+      this.showToast("Network error. Please check your connection.");
     } else {
       // Other error
-      toast.error("An unexpected error occurred.");
+      this.showToast("An unexpected error occurred.");
     }
+  }
+
+  private showToast(message: string) {
+    const now = Date.now();
+
+    // Check if this is a duplicate toast within the debounce period
+    if (
+      this.lastErrorToast &&
+      this.lastErrorToast.message === message &&
+      now - this.lastErrorToast.timestamp < this.TOAST_DEBOUNCE_MS
+    ) {
+      return; // Skip duplicate toast
+    }
+
+    // Show the toast and update the last error record
+    toast.error(message);
+    this.lastErrorToast = { message, timestamp: now };
   }
 
   // Generic request methods
