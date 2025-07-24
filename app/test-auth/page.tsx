@@ -31,11 +31,11 @@ export default function TestAuthPage() {
 
   return (
     <WithAuth requiredRole="any" redirectTo="/auth/login">
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-gray-50 p-8 flex flex-col justify-center">
+        <div className="max-w-4xl mx-auto w-full">
           <h1 className="text-3xl font-bold mb-8">Authentication Test Page</h1>
           
-          <div className="grid gap-6">
+          <div className="flex flex-col space-y-6">
             {/* Authentication Status */}
             <Card>
               <CardHeader>

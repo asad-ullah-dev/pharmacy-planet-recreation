@@ -22,7 +22,7 @@ const Logout = () => {
   return (
     <Button 
       variant="outline" 
-      className="text-red-600 border-red-500 hover:bg-red-50 sm:text-sm text-xs sm:px-3 px-1.5" 
+      className="text-red-600 border-red-500 hover:bg-red-50 hover:text-red-500 sm:text-sm text-xs sm:px-3 px-1.5" 
       onClick={handleLogout}
     >
       Logout

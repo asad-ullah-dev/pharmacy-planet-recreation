@@ -193,7 +193,7 @@ export default function OrdersPage() {
 
         {/* Summary Stats */}
         {ordersData && (
-          <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-blue-600">{ordersData.totals.total_orders}</div>

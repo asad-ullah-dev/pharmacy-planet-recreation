@@ -657,7 +657,7 @@ export default function AdminProductsPage() {
             return (
               <Card
                 key={product.id}
-                className="hover:shadow-md transition-shadow"
+                className="hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => router.push(`/admin/products/${product.id}`)}
               >
                 <CardContent className="p-6">
