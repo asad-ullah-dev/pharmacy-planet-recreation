@@ -62,12 +62,8 @@ export default function SupportPage() {
       setTickets(data);
     } catch (error: any) {
       console.error("Failed to fetch tickets:", error);
-      if (error?.response?.status === 403) {
-        const errorMessage = error?.response?.data?.message || "Access denied";
-        toast.error(errorMessage);
-      } else if (error?.response?.status !== 422) {
-        toast.error("Failed to fetch tickets");
-      }
+      // Remove the manual toast calls since the API client handles them
+      // The API client will automatically show the appropriate error message
     } finally {
       setLoading(false);
     }
@@ -81,13 +77,7 @@ export default function SupportPage() {
       setSelectedTicket(ticketDetails);
     } catch (error: any) {
       console.error("Failed to load ticket details:", error);
-
-      if (error?.response?.status === 403) {
-        const errorMessage = error?.response?.data?.message || "Access denied";
-        toast.error(errorMessage);
-      } else if (error?.response?.status !== 422) {
-        toast.error("Failed to load ticket details");
-      }
+      // Remove the manual toast calls since the API client handles them
       setSelectedTicket(ticket);
     } finally {
       setModalLoading(false);
@@ -110,13 +100,7 @@ export default function SupportPage() {
       setReplyFiles([]);
     } catch (error: any) {
       console.error("Failed to send reply:", error);
-
-      if (error?.response?.status === 403) {
-        const errorMessage = error?.response?.data?.message || "Access denied";
-        toast.error(errorMessage);
-      } else if (error?.response?.status !== 422) {
-        toast.error("Failed to send reply");
-      }
+      // Remove the manual toast calls since the API client handles them
     } finally {
       setReplyLoading(false);
     }

@@ -114,8 +114,7 @@ export default function ConsultationPage() {
       dismissToast(loadingToast);
 
       if (error?.response?.status === 403) {
-        const errorMessage = error?.response?.data?.message || "Access denied";
-        toast.error(errorMessage);
+        console.error("Consultation submission error:", error);
       } else if (error?.response?.status !== 422) {
         toast.error("Failed to submit consultation. Please try again.");
       }

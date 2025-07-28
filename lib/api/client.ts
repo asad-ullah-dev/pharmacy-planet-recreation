@@ -67,7 +67,6 @@ class ApiClient {
 
       switch (status) {
         case 401:
-          // Unauthorized - clear token and redirect to login
           if (typeof window !== "undefined") {
             localStorage.removeItem("token");
             localStorage.removeItem("user");
@@ -77,13 +76,16 @@ class ApiClient {
           break;
 
         case 403:
-          this.showToast(
-            "Access denied. You do not have permission to perform this action."
-          );
+          if (data && typeof data === "object" && "message" in data) {
+            this.showToast((data as any).message);
+          } else {
+            this.showToast(
+              "Access denied. You do not have permission to perform this action."
+            );
+          }
           break;
 
         case 404:
-          // Show the actual error message from the API response
           if (data && typeof data === "object" && "error" in data) {
             this.showToast((data as any).error);
           } else {
@@ -92,7 +94,6 @@ class ApiClient {
           break;
 
         case 422:
-          // Validation errors
           if (data && typeof data === "object" && "errors" in data) {
             const errors = (data as any).errors;
             Object.values(errors).forEach((errorMsg: any) => {
