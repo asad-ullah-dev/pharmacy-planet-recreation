@@ -138,12 +138,82 @@ export const createOrder = async (orderData: {
   billing_state: string
   billing_zip: string
   billing_country: string
-  user_address_id: number
+  user_address_id: number | null
   stripe_token: string
-}): Promise<{ orderId: string; summary: OrderSummaryResponse }> => {
+}): Promise<ApiResponse<{
+  order: {
+    id: number
+    user_id: number
+    medicine_id: number
+    user_address_id: number
+    product_name: string
+    product_price: string
+    quantity: number
+    subtotal: number
+    tax: number
+    shipping: number
+    total: number
+    billing_first_name: string
+    billing_last_name: string
+    billing_address: string
+    billing_city: string
+    billing_state: string
+    billing_zip: string
+    billing_country: string
+    payment_status: string
+    status: string
+    smrt_payment_url: string
+    smrt_iv: string
+    created_at: string
+    updated_at: string
+  }
+  payment_url: string
+  summary: {
+    subtotal: number
+    tax: number
+    shipping: number
+    total: number
+  }
+  shipping_address: UserAddress
+}>> => {
   try {
-    const response = await apiClient.post<ApiResponse<{ orderId: string; summary: OrderSummaryResponse }>>('/frontend/order', orderData)
-    return response.data
+    const response = await apiClient.post<ApiResponse<{
+      order: {
+        id: number
+        user_id: number
+        medicine_id: number
+        user_address_id: number
+        product_name: string
+        product_price: string
+        quantity: number
+        subtotal: number
+        tax: number
+        shipping: number
+        total: number
+        billing_first_name: string
+        billing_last_name: string
+        billing_address: string
+        billing_city: string
+        billing_state: string
+        billing_zip: string
+        billing_country: string
+        payment_status: string
+        status: string
+        smrt_payment_url: string
+        smrt_iv: string
+        created_at: string
+        updated_at: string
+      }
+      payment_url: string
+      summary: {
+        subtotal: number
+        tax: number
+        shipping: number
+        total: number
+      }
+      shipping_address: UserAddress
+    }>>('/frontend/order', orderData)
+    return response
   } catch (error) {
     console.error('Error creating order:', error)
     throw error

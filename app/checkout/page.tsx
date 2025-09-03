@@ -109,21 +109,113 @@ const CheckoutForm = React.forwardRef((props: any, ref) => {
       return false
     }
 
-    // Basic validation
-    if (!formData.cardholderName.trim()) {
-      toast.error('Please enter cardholder name')
+      // Basic validation
+  if (!formData.cardholderName.trim()) {
+    toast.error('Please enter cardholder name')
+    return false
+  }
+  
+  if (!productData.id) {
+    toast.error('Product information is missing')
+    return false
+  }
+  
+  // Validate billing address fields
+  if (!formData.billingFirstName.trim()) {
+    toast.error('Please enter billing first name')
+    return false
+  }
+  
+  if (!formData.billingLastName.trim()) {
+    toast.error('Please enter billing last name')
+    return false
+  }
+  
+  if (!formData.billingAddress.trim()) {
+    toast.error('Please enter billing address')
+    return false
+  }
+  
+  if (!formData.billingCity.trim()) {
+    toast.error('Please enter billing city')
+    return false
+  }
+  
+  if (!formData.billingState.trim()) {
+    toast.error('Please enter billing state')
+    return false
+  }
+  
+  if (!formData.billingZip.trim()) {
+    toast.error('Please enter billing postal code')
+    return false
+  }
+  
+  if (!formData.billingCountry.trim()) {
+    toast.error('Please enter billing country')
+    return false
+  }
+  
+  // Validate shipping address if not using billing as shipping
+  if (!formData.useBillingAsShipping) {
+    if (!formData.shippingFirstName.trim()) {
+      toast.error('Please enter shipping first name')
       return false
     }
     
-    if (!productData.id) {
-      toast.error('Product information is missing')
+    if (!formData.shippingLastName.trim()) {
+      toast.error('Please enter shipping last name')
       return false
     }
     
-    if (!orderSummary?.user_address?.id) {
-      toast.error('User address information is missing')
+    if (!formData.shippingAddress.trim()) {
+      toast.error('Please enter shipping address')
       return false
     }
+    
+    if (!formData.shippingCity.trim()) {
+      toast.error('Please enter shipping city')
+      return false
+    }
+    
+    if (!formData.shippingState.trim()) {
+      toast.error('Please enter shipping state')
+      return false
+    }
+    
+    if (!formData.shippingZip.trim()) {
+      toast.error('Please enter shipping postal code')
+      return false
+    }
+    
+    if (!formData.shippingCountry.trim()) {
+      toast.error('Please enter shipping country')
+      return false
+    }
+  }
+  
+  // Check if we have either a saved user address or complete form data
+  if (!orderSummary?.user_address?.id) {
+    // If no saved address, ensure all form fields are filled
+    if (!formData.billingFirstName.trim() || !formData.billingLastName.trim() || 
+        !formData.billingAddress.trim() || !formData.billingCity.trim() || 
+        !formData.billingState.trim() || !formData.billingZip.trim() || 
+        !formData.billingCountry.trim()) {
+      toast.error('Please complete all billing address fields')
+      return false
+    }
+    
+    // If not using billing as shipping, validate shipping fields too
+    if (!formData.useBillingAsShipping) {
+      if (!formData.shippingFirstName.trim() || !formData.shippingLastName.trim() || 
+          !formData.shippingAddress.trim() || !formData.shippingCity.trim() || 
+          !formData.shippingState.trim() || !formData.shippingZip.trim() || 
+          !formData.shippingCountry.trim()) {
+        toast.error('Please complete all shipping address fields')
+        return false
+      }
+    }
+  }
     
     try {
       // Get the card element
@@ -156,7 +248,7 @@ const CheckoutForm = React.forwardRef((props: any, ref) => {
         billing_state: formData.billingState,
         billing_zip: formData.billingZip,
         billing_country: formData.billingCountry,
-        user_address_id: orderSummary.user_address.id,
+        user_address_id: orderSummary?.user_address?.id || null, // Can be null if no saved address
         stripe_token: token.id, // Use token ID
       }
       
@@ -167,9 +259,18 @@ const CheckoutForm = React.forwardRef((props: any, ref) => {
       
       console.log("Order submitted successfully:", result)
       
-      toast.success('Order submitted successfully!')
-      window.location.href = '/dashboard/orders'
-      return true
+      // Check if payment URL is provided and redirect user
+      if (result?.data?.payment_url) {
+        toast.success('Order created successfully! Redirecting to payment...')
+        // Redirect to the payment URL
+        window.location.href = result.data.payment_url
+        return true
+      } else {
+        toast.success('Order submitted successfully!')
+        // Fallback redirect to orders page if no payment URL
+        window.location.href = '/dashboard/orders'
+        return true
+      }
       
     } catch (error) {
       console.error('Error submitting order:', error)
@@ -218,6 +319,11 @@ const CheckoutForm = React.forwardRef((props: any, ref) => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             Billing Address
+            {!orderSummary?.user_address?.id && (
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                New Address
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -462,6 +568,45 @@ export default function CheckoutPage() {
     useBillingAsShipping: true,
   })
 
+  // Fetch order summary from API
+  const fetchOrderSummary = async (productId: number) => {
+    try {
+      setIsLoadingSummary(true)
+      const summary = await getOrderSummary(productId)
+      setOrderSummary(summary)
+      
+      // Populate form with address data from API
+      if (summary.user_address) {
+        const addressData = {
+          billingFirstName: summary.user_address.first_name || formData.billingFirstName,
+          billingLastName: summary.user_address.last_name || formData.billingLastName,
+          billingAddress: summary.user_address.street_address || formData.billingAddress,
+          billingCity: summary.user_address.city || formData.billingCity,
+          billingState: summary.user_address.county || formData.billingState,
+          billingZip: summary.user_address.zip_postal_code || formData.billingZip,
+          billingCountry: summary.user_address.country || formData.billingCountry,
+          shippingFirstName: summary.user_address.first_name || formData.shippingFirstName,
+          shippingLastName: summary.user_address.last_name || formData.shippingLastName,
+          shippingAddress: summary.user_address.street_address || formData.shippingAddress,
+          shippingCity: summary.user_address.city || formData.shippingCity,
+          shippingState: summary.user_address.county || formData.shippingState,
+          shippingZip: summary.user_address.zip_postal_code || formData.shippingZip,
+          shippingCountry: summary.user_address.country || formData.shippingCountry,
+        }
+        setFormData(prev => ({ ...prev, ...addressData }))
+        setOriginalAddress(addressData)
+      } else {
+        // If no user address exists, we'll use the form data as is
+        console.log('No user address found, using form data')
+      }
+    } catch (error) {
+      console.error('Error fetching order summary:', error)
+      // Continue with local data if API fails
+    } finally {
+      setIsLoadingSummary(false)
+    }
+  }
+
   // Load product data from URL parameters and fetch order summary
   useEffect(() => {
     const productId = searchParams.get('productId')
@@ -478,47 +623,14 @@ export default function CheckoutPage() {
         description: "Monthly supply"
       })
     }
-    
-    // Fetch order summary from API
-    const fetchOrderSummary = async () => {
-      try {
-        setIsLoadingSummary(true)
-        const summary = await getOrderSummary(productData.id || undefined)
-        setOrderSummary(summary)
-        
-        // Populate form with address data from API
-        if (summary.user_address) {
-          const addressData = {
-            billingFirstName: summary.user_address.first_name || formData.billingFirstName,
-            billingLastName: summary.user_address.last_name || formData.billingLastName,
-            billingAddress: summary.user_address.street_address || formData.billingAddress,
-            billingCity: summary.user_address.city || formData.billingCity,
-            billingState: summary.user_address.county || formData.billingState,
-            billingZip: summary.user_address.zip_postal_code || formData.billingZip,
-            billingCountry: summary.user_address.country || formData.billingCountry,
-            shippingFirstName: summary.user_address.first_name || formData.shippingFirstName,
-            shippingLastName: summary.user_address.last_name || formData.shippingLastName,
-            shippingAddress: summary.user_address.street_address || formData.shippingAddress,
-            shippingCity: summary.user_address.city || formData.shippingCity,
-            shippingState: summary.user_address.county || formData.shippingState,
-            shippingZip: summary.user_address.zip_postal_code || formData.shippingZip,
-            shippingCountry: summary.user_address.country || formData.shippingCountry,
-          }
-          setFormData(prev => ({ ...prev, ...addressData }))
-          setOriginalAddress(addressData)
-        }
-      } catch (error) {
-        console.error('Error fetching order summary:', error)
-        // Continue with local data if API fails
-      } finally {
-        setIsLoadingSummary(false)
-      }
+  }, [searchParams])
+  
+  // Call fetchOrderSummary when productData.id changes
+  useEffect(() => {
+    if (productData.id) {
+      fetchOrderSummary(productData.id)
     }
-    
-    if(productData.id){
-      fetchOrderSummary()
-    }
-  }, [searchParams, productData.id])
+  }, [productData.id])
 
 
   // Helper function to handle empty values
